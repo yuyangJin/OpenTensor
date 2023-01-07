@@ -1,0 +1,14 @@
+add_library(IR
+    SHARED
+    irnode.cpp   
+    data_irnode.cpp
+    mem_irnode.cpp
+    task_irnode.cpp
+    comm_irnode.cpp
+    region_irnode.cpp
+    para_irnode.cpp
+    ctrl_irnode.cpp
+    for_irnode.cpp
+    if_irnode.cpp
+    irgraph.cpp
+)
