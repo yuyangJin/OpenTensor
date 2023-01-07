@@ -2,8 +2,8 @@ site_name: OpenTensor
 site_url: https://yuyangjin.github.io/OpenTensor/
 nav:
     - Home: index.md
-    # - About: 
-    #     - About PerFlow: about/about.md
+    - About: 
+        - About OpenTensor: about/about.md
     #     - Overview: about/overview.md
     #     - Functionality: about/functionality.md
     # - User Guide: 
@@ -11,8 +11,8 @@ nav:
     #     - Installation: userguide/installation.md
     #     - Using PerFlow: userguide/firstrun.md
     #     - Customized Performance Analysis: userguide/performanceanalysis.md
-    # - Documentation:
-    #     - Documentation: documentation/documentation.md
+    - Documentation:
+        - Documentation: documentation/documentation.md
     #     - Python API: documentation/pythonapi.md
     #     - Builtin Passes: documentation/builtinpass.md 
     #     - Builtin Models: documentation/builtinmodel.md 
