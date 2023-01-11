@@ -20,7 +20,12 @@
 
 ## Introduction (简介)
 
+<font size="5"> High Performance Sparse Tensor toolbox with distributed memory. </font>       
 
-<font size="3">
-OpenTensor是...
-</font>
+* 分布式                           
+*  异构                             
+* 高性能                           
+* 可扩展                    
+
+
+

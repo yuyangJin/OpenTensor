@@ -54,6 +54,12 @@
                   <li class="toctree-l1 current"><a class="reference internal current" href="./">Documentation</a>
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#api">API</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#dense-tensor">Dense Tensor</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#sparse-tensor">Sparse Tensor</a>
+    </li>
+        </ul>
     </li>
     </ul>
                   </li>
@@ -84,6 +90,257 @@
               
                 <h1 id="documentation">Documentation (使用文档)</h1>
 <h2 id="api">API</h2>
+<h4 id="dense-tensor">Dense Tensor</h4>
+<p>Construction methods</p>
+<pre><code class="language-c++">Tensor (int order, int const *len, int const *sym, World &amp;wrld=get_universe(), char const *name=NULL, bool profile=0, tensor_int::algstrct const &amp;sr=Ring&lt; dtype &gt;())
+</code></pre>
+<p>defines a tensor filled with zeros</p>
+<pre><code class="language-c++">Tensor (int order, int const *len, int const *sym, World &amp;wrld, tensor_int::algstrct const &amp;sr, char const *name=NULL, bool profile=0)
+</code></pre>
+<p>defines a nonsymmetric tensor filled with zeros</p>
+<pre><code class="language-c++">Tensor (int order, int const *len, World &amp;wrld=get_universe(), tensor_int::algstrct const &amp;sr=Ring&lt; dtype &gt;(), char const *name=NULL, bool profile=0)
+
+Tensor (int order, bool is_sparse, int const *len, int const *sym, World &amp;wrld=get_universe(), tensor_int::algstrct const &amp;sr=Ring&lt; dtype &gt;(), char const *name=NULL, bool profile=0)
+</code></pre>
+<p>defines a nonsymmetric tensor filled with zeros on a specified algstrct   </p>
+<pre><code class="language-c++">Tensor (int order, bool is_sparse, int const *len, World &amp;wrld=get_universe(), tensor_int::algstrct const &amp;sr=Ring&lt; dtype &gt;(), char const *name=NULL, bool profile=0)
+
+Tensor (Tensor&lt; dtype &gt; const &amp;A)
+</code></pre>
+<p>copies a tensor, copying the data of A (same as above)   </p>
+<pre><code class="language-c++">cTensor (tensor const &amp;A)
+</code></pre>
+<p>copies a tensor (setting data to zero or copying A)   </p>
+<pre><code class="language-c++">Tensor (bool copy, tensor const &amp;A)
+</code></pre>
+<p>repacks the tensor other to a different symmetry 
+(assumes existing data contains the symmetry and keeps only values with indices in increasing order) </p>
+<pre><code class="language-c++">Tensor (tensor &amp;A, int const *new_sym)
+</code></pre>
+<p>creates a zeroed out copy (data not copied) of a tensor in a different world  </p>
+<pre><code class="language-c++">Tensor (tensor const &amp;A, World &amp;wrld)
+</code></pre>
+<p>defines tensor filled with zeros on the default algstrct on a user-specified distributed layout  </p>
+<pre><code class="language-c++">Tensor (int order, int const *len, int const *sym, World &amp;wrld, char const *idx, Idx_Partition const &amp;prl, Idx_Partition const &amp;blk=Idx_Partition(), char const *name=NULL, bool profile=0, tensor_int::algstrct const &amp;sr=Ring&lt; dtype &gt;())
+
+Tensor (int order, bool is_sparse, int const *len, int const *sym, World &amp;wrld, char const *idx, Idx_Partition const &amp;prl, Idx_Partition const &amp;blk=Idx_Partition(), char const *name=NULL, bool profile=0, tensor_int::algstrct const &amp;sr=Ring&lt; dtype &gt;())
+</code></pre>
+<ul>
+<li>Linear Operations </li>
+</ul>
+<pre><code class="language-c++">void  operator= (OpenTensor::Tensor&lt; dtype &gt; &amp;values)
+
+void  operator+= (OpenTensor::Tensor&lt; dtype &gt; &amp;values)
+
+void  operator-= (OpenTensor::Tensor&lt; dtype &gt; &amp;values)
+
+void  operator*= (OpenTensor::Tensor&lt; dtype &gt; &amp;values)
+
+void  operator= (OpenTensor::Sparse_Tensor&lt;dtype&gt; &amp;values)
+
+void  operator+= (OpenTensor::Sparse_Tensor&lt;dtype &gt; &amp;values)
+
+void  operator-= (OpenTensor::Sparse_Tensor&lt;dtype&gt; &amp;values)
+
+void  operator*= (OpenTensor::Sparse_Tensor&lt;dtype&gt; &amp;values)
+
+
+</code></pre>
+<pre><code class="language-c++">template&lt;typename dtype = double&gt;
+void OpenTensor::Tensor&lt; dtype &gt;::sum   (   dtype   alpha,
+        OpenTensor::tensor &amp;    A,
+        char const *    idx_A,
+        dtype   beta,
+        char const *    idx_B 
+    )       
+
+Compute the expression:
+
+B[idx_B] = beta*B[idx_B] + alpha*A[idx_A]
+
+Parameters
+    [in]    alpha   A scaling factor
+    [in]    A   first operand tensor
+    [in]    idx_A   indices of A in sum, e.g. &quot;ij&quot; -&gt; A_{ij}
+    [in]    beta    B scaling factor
+    [in]    idx_B   indices of B (this tensor), e.g. &quot;ij&quot; -&gt; B_{ij}
+</code></pre>
+<ul>
+<li>Memory Operations </li>
+</ul>
+<pre><code class="language-c++">template&lt;typename dtype = double&gt;
+void OpenTensor::Tensor&lt; dtype &gt;::row_swap  (         
+        OpenTensor::tensor&lt; dtype &gt; &amp; A,
+        OpenTensor::tensor&lt;int&gt; &amp;   idx_A,
+        OpenTensor::tensor&lt;int&gt; &amp;   idx_B,
+    )       
+
+swap the following rows: A[idx_A][:]  and A[idx_B][:]
+
+template&lt;typename dtype = double&gt;
+void OpenTensor::Tensor&lt; dtype &gt;::row_swap  (         
+        OpenTensor::tensor&lt; dtype &gt; &amp; A,
+        OpenTensor::tensor&lt;int&gt; &amp;   idx_A,
+        OpenTensor::tensor&lt;int&gt; &amp;   idx_B,
+        OpenTensor::tensor&lt;int&gt; &amp;   col_ind,
+    )       
+
+swap the following rows: A[idx_A][col_ind]  and A[idx_B][col_ind]
+</code></pre>
+<ul>
+<li>Reduction methods</li>
+</ul>
+<pre><code class="language-c++">OpenTensor::Tensor&lt; dtype &gt; OpenTensor::Tensor&lt; dtype &gt;::norm1()    
+
+OpenTensor::Tensor&lt; dtype &gt; OpenTensor::Tensor&lt; dtype &gt;::norm2()    
+
+OpenTensor::Tensor&lt; dtype &gt; OpenTensor::Tensor&lt; dtype &gt;::infity()   
+
+OpenTensor::Tensor&lt; dtype &gt; OpenTensor::Tensor&lt; dtype &gt;::min() 
+
+OpenTensor::Tensor&lt; dtype &gt; OpenTensor::Tensor&lt; dtype &gt;::sum()  
+
+OpenTensor::Tensor&lt; dtype &gt; OpenTensor::Tensor&lt; dtype &gt;::argmin()   
+
+OpenTensor::Tensor&lt; dtype &gt; OpenTensor::Tensor&lt; dtype &gt;::asum()     
+</code></pre>
+<p>A basic tensor algorithm is described as follows:</p>
+<pre><code class="language-c++">Tensor&lt;&gt; Jacobi(Tensor&lt;&gt; A , Tensor&lt;&gt; b , int n){
+Tensor&lt;&gt; R(A);
+R[&quot;ii&quot;] = 0.0;
+Tensor&lt;&gt; x (n), d(n), r(n);
+Function&lt;&gt; inv([]( double &amp; d ){ return 1./d; });
+d[&quot;i&quot;] = inv(A[&quot;ii&quot;]);  
+do {
+    x[&quot;i&quot;] = d[&quot;i&quot;]*(b[&quot;i&quot;]-R[&quot;ij&quot;]*x[&quot;j&quot;]);
+    r[&quot;i&quot;] = b[&quot;i&quot;]-A [&quot;ij&quot;]*x[&quot;j&quot;];  
+} while ( r.norm2 () &gt; 1. E -6);  // compute norm
+return x;
+}
+</code></pre>
+<h4 id="sparse-tensor">Sparse Tensor</h4>
+<p>base constructor </p>
+<pre><code class="language-c++">Sparse_Tensor ()
+</code></pre>
+<p>initialize a tensor which corresponds to a set of indices </p>
+<pre><code>Sparse_Tensor (std::vector&lt; int64_t &gt; indices, Tensor&lt; dtype &gt; *parent)
+</code></pre>
+<p>initialize a tensor which corresponds to a set of indices  </p>
+<pre><code>Sparse_Tensor (int64_t n, int64_t *indices, Tensor&lt; dtype &gt; *parent)
+</code></pre>
+<p>set the sparse set of indices on the parent tensor to values forall(j) i = indices[j]; parent[i] = beta<em>parent[i] + alpha</em>values[j];   </p>
+<pre><code>void write (dtype alpha, dtype *values, dtype beta)
+
+void operator= (OpenTensor::Sparse_Tensor&lt; dtype &gt; values)
+
+void operator+= (OpenTensor::Sparse_Tensor&lt; dtype &gt;values)
+
+void  operator-= (OpenTensor::Sparse_Tensor&lt; dtype &gt; values)
+
+void  operator= (OpenTensor::Tensor&lt; dtype &gt; values)
+
+void  operator+= (OpenTensor::Tensor&lt; dtype &gt; values)
+
+void  operator-= (OpenTensor::Tensor&lt; dtype &gt; values
+</code></pre>
+<p>read the sparse set of indices on the parent tensor to values forall(j) </p>
+<p>$i = indices[j];$ </p>
+<p>$values[j] = \alpha<em>parent[i] + \beta</em>values[j]; $ </p>
+<pre><code>void read (dtype alpha, dtype *values, dtype beta)
+
+operator std::vector&lt; dtype &gt; ()
+
+operator dtype * ()
+</code></pre>
+<p>A basic sparse tensor algorithm is described as follows:
+Bellman-Ford computes the iterative scheme</p>
+<p>$P_i^{(r)} = \min_j (A_{ij} + P_j^{(r-1)})$</p>
+<p>starting from $r = 1$ and until convergence $P (r) = P (r−1)$, which will be reached by $r = |V|$, unless the graph contains negative-weight cycles. </p>
+<pre><code>template &lt;typename t&gt;
+bool Bellman_Ford(Matrix&lt;t&gt; A, Vector&lt;t&gt; P, int n){
+Vector&lt;t&gt; Q(P);
+int r = 0;
+OpenTensor::Tensor normP;
+OpenTensor::Tensor normQ;
+do { 
+    if (r == n+1) return false;      // exit if we did not converge in n iterations
+    else r++;
+    Q["i"]  = P["i"];              // save old distances
+    P["i"] += A["ij"]*P["j"];      // update distances 
+    normQ = Q.norm1();
+    normP = P.norm1();
+} while (normP &lt; normQ); // continue so long as some distance got shorter
+return true;
+}
+</code></pre>
+<h1 id="kruscal-tensor">Kruscal Tensor</h1>
+<p>Creating a one-dimensional ktensor</p>
+<pre><code>template &lt;typename dtype&gt;
+KTensor Kruskal_Tensor(std::vector&lt; dtype &gt; values)
+</code></pre>
+<p>Kruskal tensor format via ktensor</p>
+<pre><code>template &lt;typename dtype&gt;
+KTensor Kruskal_Tensor(std::vector&lt; dtype &gt; values, arg**)
+
+std::vector&lt;double&gt; A  = { 1,2,3};
+std::vector&lt;double&gt; B  = { 1,2,3};
+std::vector&lt;double&gt; C  = { 1,2,3,4,5,6};
+KTensor X = Kruskal_Tensor(A,B,C)  %&lt;-- Create the ktensor.
+</code></pre>
+<p>Specifying weights in a ktensor</p>
+<pre><code>template &lt;typename dtype&gt;
+void Kruskal_Tensor(std::vector&lt; dtype &gt; values, KTensor &amp;)
+</code></pre>
+<p>Use full or tensor to convert a ktensor to a tensor</p>
+<pre><code>template &lt;typename dtype&gt;
+KTensor Kruskal_Tensor(Tensor &amp;)
+</code></pre>
+<p>Use double to convert a ktensor to a multidimensional array</p>
+<pre><code>template &lt;typename dtype&gt;
+void double(KTensor &amp;, std::vector&lt;dtype&gt; &amp;);
+</code></pre>
+<p>Use ndims and size for the dimensions of a ktensor</p>
+<pre><code>template &lt;typename dtype&gt;
+void dims(KTensor &amp;)
+</code></pre>
+<p>Basic operations with a ktensor</p>
+<pre><code>void operator= (std::vector&lt; dtype &gt; values)
+
+void operator+= (std::vector&lt; dtype &gt; values)
+
+void  operator-= (std::vector&lt; dtype &gt; values)
+
+void  operator= (dtype *values)
+
+void  operator+= (dtype *values)
+
+void  operator-= (dtype *values)
+</code></pre>
+<p>Use arrange to normalize the factors of a ktensor</p>
+<pre><code>template &lt;typename dtype&gt;
+void normalize(KTensor &amp;)
+</code></pre>
+<p>Displaying a ktensor</p>
+<pre><code>template &lt;typename dtype&gt;
+void displaying(KTensor &amp;)
+</code></pre>
+<ul>
+<li>Reduction methods</li>
+</ul>
+<pre><code>OpenTensor::KTensor&lt; dtype &gt; OpenTensor::KTensor&lt; dtype &gt;::norm1()  
+
+OpenTensor::KTensor&lt; dtype &gt; OpenTensor::KTensor&lt; dtype &gt;::norm2()  
+
+OpenTensor::KTensor&lt; dtype &gt; OpenTensor::KTensor&lt; dtype &gt;::infity()     
+
+OpenTensor::KTensor&lt; dtype &gt; OpenTensor::KTensor&lt; dtype &gt;::min() 
+
+OpenTensor::KTensor&lt; dtype &gt; OpenTensor::KTensor&lt; dtype &gt;::sum()    
+
+OpenTensor::KTensor&lt; dtype &gt; OpenTensor::KTensor&lt; dtype &gt;::argmin()     
+
+OpenTensor::KTensor&lt; dtype &gt; OpenTensor::KTensor&lt; dtype &gt;::asum() 
+</code></pre>
               
             </div>
           </div><footer>
