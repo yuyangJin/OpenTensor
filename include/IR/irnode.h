@@ -1,10 +1,18 @@
 #ifndef IRNODE_H_
 #define IRNODE_H_
 
+#include <string>
+#include <vector>
+
+struct DataShape {
+    std::vector<int64_t> shape;
+};
+
 class IRNode {
 public:
     enum irnode_type_t {
-        IRNode_Data,
+        IRNode_DataDecl,
+        IRNode_DataRef,
         IRNode_Mem,
         IRNode_Task,
         IRNode_Comm,
@@ -18,14 +26,30 @@ public:
     virtual ~IRNode() = default;
 
     irnode_type_t getType() const {return _type;}
-
-private:
+private:    
     irnode_type_t _type; 
+};
+
+class DataDeclIRNode : public IRNode {
+// private:
+    std::string _name;
+    DataShape _shape;
+
+public:
+    DataDeclIRNode(std::string& name, DataShape shape)
+        :IRNode(IRNode_DataDecl), _name(std::move(name)), _shape(std::move(shape)) {}
+    std::string &getName() { return _name; }
+    // ExprAST *getInitVal() { return initVal.get(); }
+    const DataShape &getType() { return _shape; }
 
 };
 
-class DataIRNode : public IRNode {
-
+class DataRefIRNode : public IRNode {
+private:
+    std::string _name;
+    DataShape _shape;    
+public:
+    
 };
 
 class MemIRNode : public IRNode {
@@ -33,7 +57,7 @@ class MemIRNode : public IRNode {
 };
 
 class TaskIRNode : public IRNode {
-
+    // std::string ;
 };
 
 class CommIRNode : public IRNode {
