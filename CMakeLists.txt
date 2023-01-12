@@ -10,6 +10,9 @@ endif()
 set(CMAKE_BUILD_TYPE Debug CACHE STRING "Set build type to DEBUG" FORCE)
 message(AUTHOR_WARNING "Overwrite build type to DEBUG for development")
 
+find_package(LLVM REQUIRED CONFIG)
+find_package(Clang REQUIRED CONFIG)
+
 option(ENABLE_TEST "Enable test" OFF)
 option(ENABLE_SANITIZE "Enable sanitize" OFF)
 
