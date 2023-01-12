@@ -7,7 +7,8 @@ if [ ! $(which clang-format) ]; then
 fi
 
 find $SCRIPT_DIR/../include -iname *.h -o -iname *.cpp | xargs clang-format -i -style=file
-find $SCRIPT_DIR/../src -iname *.h -o -iname *.cpp | xargs clang-format -i -style=file
+find $SCRIPT_DIR/../bin -iname *.h -o -iname *.cpp | xargs clang-format -i -style=file
+find $SCRIPT_DIR/../lib -iname *.h -o -iname *.cpp | xargs clang-format -i -style=file
 # find $SCRIPT_DIR/../example -iname *.h -o -iname *.cpp | xargs clang-format -i -style=file
 find $SCRIPT_DIR/../test -iname *.h -o -iname *.cpp | xargs clang-format -i -style=file
 
