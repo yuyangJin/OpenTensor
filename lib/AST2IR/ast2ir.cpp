@@ -16,11 +16,24 @@ bool isBuiltinFunc(std::string & func) {
   return false;
 }
 
-// bool ASTConverterClassVisitor::VisitVarDecl(clang::VarDecl *vd) {
-//   // llvm::errs() << vd->getType().getAsString() << "\n";
-//   // llvm::errs() << vd->getName().str() << "\n";
-//   return true;
-// }
+ASTConverterClassConsumer::ASTConverterClassConsumer(clang::CompilerInstance *CI) {
+  match_finder.addMatcher(clang::ast_matchers::varDecl(clang::ast_matchers::isExpansionInMainFile()).bind("VarDecl_in_main"), &handler);
+  const auto matching_node = clang::ast_matchers::functionDecl(clang::ast_matchers::isExpansionInMainFile()).bind("fn");
+  match_finder.addMatcher(matching_node, &handler);
+}
+
+void ASTConverterCallback::run(const clang::ast_matchers::MatchFinder::MatchResult &Result)  {
+  const auto* func = Result.Nodes.getNodeAs<clang::FunctionDecl>("fn");
+  if (func) {
+    std::string funcName = func->getNameInfo().getName().getAsString();
+    llvm::errs() << "Function: " << funcName << "\n";
+  }
+  const clang::VarDecl *vd = Result.Nodes.getNodeAs<clang::VarDecl>("VarDecl_in_main");
+  if (vd) {
+    llvm::errs() << vd->getType().getAsString() << "\n";
+    llvm::errs() << vd->getNameAsString() << "\n";
+  }
+}
 
 // bool ASTConverterClassVisitor::VisitMemberExpr(clang::MemberExpr *me) {
 //   auto func_name = me->getMemberNameInfo().getAsString();
@@ -31,4 +44,3 @@ bool isBuiltinFunc(std::string & func) {
   
 //   return true;
 // }
-
