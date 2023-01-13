@@ -7,12 +7,13 @@
 #include "clang/AST/AST.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/Expr.h"
-#include <clang/ASTMatchers/ASTMatchFinder.h>
-#include <clang/ASTMatchers/ASTMatchers.h>
+#include "clang/AST/ExprCXX.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/FrontendAction.h"
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Tooling.h"
+#include <clang/ASTMatchers/ASTMatchFinder.h>
+#include <clang/ASTMatchers/ASTMatchers.h>
 
 // LLVM includes
 #include <llvm/ADT/StringRef.h>
@@ -23,22 +24,24 @@
 #include <algorithm>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 std::unique_ptr<IRGraph> _graph;
+std::unordered_map<std::string, IRNode *> _tensor_name_2_irnode;
 
-
-class ASTConverterCallback : public clang::ast_matchers::MatchFinder::MatchCallback {
- public:
-  ASTConverterCallback(){}
-  void run(const clang::ast_matchers::MatchFinder::MatchResult &Result) override;
+class ASTConverterCallback
+    : public clang::ast_matchers::MatchFinder::MatchCallback {
+public:
+  ASTConverterCallback() {}
+  void
+  run(const clang::ast_matchers::MatchFinder::MatchResult &Result) override;
 };
-
 
 class ASTConverterClassConsumer : public clang::ASTConsumer {
 private:
-  clang::ast_matchers::MatchFinder match_finder; 
-  ASTConverterCallback handler; 
+  clang::ast_matchers::MatchFinder match_finder;
+  ASTConverterCallback handler;
 
 public:
   // override the constructor in order to pass CI
