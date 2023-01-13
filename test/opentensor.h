@@ -7,9 +7,11 @@ class Tensor {
   double *tensor;
 
 public:
-  void ot_random(int);
-  void ot_zeros(int);
-  void ot_print();
+  template<typename T, typename... Ts>
+  Tensor (T dim1, Ts... dimn);
+  void random();
+  void zeros();
+  void print();
   Tensor &operator[](Dim &);
   Tensor &operator*(Tensor &);
   Tensor &sum(Dim &);
