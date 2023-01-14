@@ -8,17 +8,17 @@ IRGraphDumper::~IRGraphDumper() {
     _fs.close();
 }
 
-void IRGraphDumper::dump(IRGraph& graph) {
+void IRGraphDumper::dump(IRGraph* graph) {
     _fs << "digraph G {" << std::endl;
 
-    auto& nodes = graph.getNodes();
+    auto& nodes = graph->getNodes();
 
     for (long unsigned int i = 0; i < nodes.size(); i++) {
         auto node = nodes[i].get();
         dump(node);
     }
 
-    auto& edges = graph.getEdges();
+    auto& edges = graph->getEdges();
     for (auto& edge : edges) {
         dumpEdge(edge);
     }

@@ -40,7 +40,7 @@ class IRGraphDumper {
 public:
   IRGraphDumper();
   ~IRGraphDumper();
-  void dump(IRGraph& graph);
+  void dump(IRGraph* graph);
 private:
   std::ofstream _fs;
   void dump(IRNode* n);
