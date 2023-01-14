@@ -7,6 +7,8 @@
 
 using irnode_id_t = size_t;
 
+static int global_n_id = 0;
+
 struct DataShape {
   std::vector<int64_t> shape;
 };
@@ -53,7 +55,7 @@ struct ReductionMode {
 class IRNode {
 public:
 
-  IRNode(irnode_type_t type) : _type(type) {}
+  IRNode(irnode_type_t type) : _type(type) {_n_uid = global_n_id++;}
   virtual ~IRNode() = default;
 
   irnode_type_t getType() const { return _type; }

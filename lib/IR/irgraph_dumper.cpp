@@ -14,6 +14,7 @@ void IRGraphDumper::dump(IRGraph* graph) {
     auto& nodes = graph->getNodes();
 
     for (long unsigned int i = 0; i < nodes.size(); i++) {
+        // auto node = nodes[i];
         auto node = nodes[i].get();
         dump(node);
     }
@@ -23,11 +24,11 @@ void IRGraphDumper::dump(IRGraph* graph) {
         dumpEdge(edge);
     }
     
-    _fs << "}";
+    _fs << "}" << std::endl;
 }
 
 void IRGraphDumper::dumpEdge(edge_t& edge) {
-    _fs << edge.first << " -> " << edge.second << ";" << std::endl;
+    _fs << "  " << edge.first << " -> " << edge.second << ";" << std::endl;
 }
 /**
  * @brief Standard output for 
@@ -35,9 +36,9 @@ void IRGraphDumper::dumpEdge(edge_t& edge) {
  */
 void IRGraphDumper::dumpNode(irnode_id_t id, std::string& name, std::string& shape) {
     _fs << "  " << id << " [";
-    _fs << "label=\"" << name << "\"";
-    _fs << "shape=\"" << shape << "\"";
-    _fs << "  " << id << "]\n";
+    _fs << "label=\"" << name << "\", ";
+    _fs << "shape=" << shape ;
+    _fs << ""<< "];\n";
 }
 
 // void IRGraphDumper::dumpRegion() {
@@ -45,7 +46,12 @@ void IRGraphDumper::dumpNode(irnode_id_t id, std::string& name, std::string& sha
 // }
 
 void IRGraphDumper::dump(IRNode* n) {
+    if (n == nullptr) {
+        return;
+    }
     auto node_type = n->getType();
+    dbg(n);
+    dbg(node_type);
     switch(node_type) {
         case IRNode_Data: {
             auto* dn = dynamic_cast<DataIRNode *>(n);

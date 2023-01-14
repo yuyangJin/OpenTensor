@@ -5,9 +5,11 @@
 
 // Clang includes
 #include "clang/AST/AST.h"
+#include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
+#include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/FrontendAction.h"
 #include "clang/Tooling/CommonOptionsParser.h"
@@ -27,8 +29,20 @@
 #include <unordered_map>
 #include <vector>
 
-std::unique_ptr<IRGraph> _graph;
-std::unordered_map<std::string, IRNode *> _tensor_name_2_irnode;
+// std::unique_ptr<IRGraph> _graph;
+IRGraph* _graph;
+std::unordered_map<std::string, irnode_id_t> _tensor_name_2_irnode_id; //latest_irnode
+
+class ASTConverterClassVisitor : public clang::RecursiveASTVisitor<ASTConverterClassVisitor> {
+private:
+    clang::ASTContext *astContext; // used for getting additional AST info
+public:
+    explicit ASTConverterClassVisitor(clang::CompilerInstance *CI) 
+      : astContext(&(CI->getASTContext()))  {}
+    virtual bool VisitVarDecl(clang::VarDecl *vd);
+    virtual bool VisitCXXMemberCallExpr(clang::CXXMemberCallExpr *cmce);
+};
+
 
 class ASTConverterCallback
     : public clang::ast_matchers::MatchFinder::MatchCallback {
@@ -40,15 +54,17 @@ public:
 
 class ASTConverterClassConsumer : public clang::ASTConsumer {
 private:
-  clang::ast_matchers::MatchFinder match_finder;
-  ASTConverterCallback handler;
+  // clang::ast_matchers::MatchFinder match_finder;
+  // ASTConverterCallback handler;
+  ASTConverterClassVisitor *visitor;
 
 public:
   // override the constructor in order to pass CI
   explicit ASTConverterClassConsumer(clang::CompilerInstance *CI);
 
   virtual void HandleTranslationUnit(clang::ASTContext &Context) {
-    match_finder.matchAST(Context);
+    // match_finder.matchAST(Context);
+    visitor->TraverseDecl(Context.getTranslationUnitDecl());
   }
 };
 
@@ -68,7 +84,8 @@ public:
   ASTConverter(int argc, const char **argv) {
 
     // build IRGraph
-    _graph = std::make_unique<IRGraph>();
+    // _graph = std::make_unique<IRGraph>();
+    _graph = new IRGraph();
 
     auto ExpectedParser =
         clang::tooling::CommonOptionsParser::create(argc, argv, MyToolCategory);
@@ -84,7 +101,7 @@ public:
                  .get());
   }
 
-  IRGraph *getIRGraph() { return _graph.get(); }
+  IRGraph *getIRGraph() { return _graph; }
 };
 
 #endif // AST_TO_IR_H_

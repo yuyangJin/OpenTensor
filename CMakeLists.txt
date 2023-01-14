@@ -14,7 +14,7 @@ find_package(LLVM REQUIRED CONFIG)
 find_package(Clang REQUIRED CONFIG)
 
 option(ENABLE_TEST "Enable test" OFF)
-option(ENABLE_SANITIZE "Enable sanitize" OFF)
+option(ENABLE_SANITIZE "Enable sanitize" ON)
 
 # set_property(TARGET opentensor PROPERTY CXX_STANDARD 17)
 # set_property(TARGET opentensor PROPERTY CXX_STANDARD_REQUIRED ON)
@@ -28,7 +28,7 @@ option(ENABLE_SANITIZE "Enable sanitize" OFF)
 
 add_compile_options(
   -Wall -Wno-missing-braces
-  #-fno-rtti # We cannot open it because dyninst use `typeid` in header
+  #-fno-rtti # We cannot open it because dynamic_cast needs it
   -fno-omit-frame-pointer -fstack-protector-all
   -rdynamic
 )

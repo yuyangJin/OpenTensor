@@ -6,7 +6,7 @@ include_directories(${LLVM_INCLUDE_DIRS})
 include_directories(${CLANG_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti") # We cannot open it because dynamic_cast needs it
 
 set(LLVM_LINK_COMPONENTS
   Option

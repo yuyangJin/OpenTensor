@@ -7,5 +7,4 @@ int main(int argc, const char **argv) {
   auto irgraph = ast_converter->getIRGraph();
   auto dumper = new IRGraphDumper();
   dumper->dump(irgraph);
-  delete dumper;
 }
