@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+using irnode_id_t = size_t;
+
 struct DataShape {
   std::vector<int64_t> shape;
 };
@@ -21,6 +23,21 @@ enum reduction_type_t {
   NONE,
 };
 
+enum irnode_type_t {
+  IRNode_Data,
+  // IRNode_DataDecl,
+  // IRNode_DataRef,
+  IRNode_Call,
+  IRNode_Mem,
+  IRNode_Task,
+  IRNode_EinsumTask,
+  IRNode_Comm,
+  IRNode_Region,
+  IRNode_Parallel,
+  IRNode_For,
+  IRNode_Branch,
+};
+
 struct ReductionMode {
   std::vector<std::string> _reduction_dims;
   reduction_type_t _type;
@@ -35,53 +52,42 @@ struct ReductionMode {
 
 class IRNode {
 public:
-  enum irnode_type_t {
-    IRNode_DataDecl,
-    IRNode_DataRef,
-    IRNode_Call,
-    IRNode_Mem,
-    IRNode_Task,
-    IRNode_EinsumTask,
-    IRNode_Comm,
-    IRNode_Region,
-    IRNode_Parallel,
-    IRNode_For,
-    IRNode_Branch,
-  };
 
   IRNode(irnode_type_t type) : _type(type) {}
   virtual ~IRNode() = default;
 
   irnode_type_t getType() const { return _type; }
+  irnode_id_t getId() const {return _n_uid; }
 
 private:
   irnode_type_t _type;
+  irnode_id_t _n_uid;
 };
 
 using IRNodeList = std::vector<std::unique_ptr<IRNode>>;
 
-class DataDeclIRNode : public IRNode {
+class DataIRNode : public IRNode {
   // private:
   std::string _name;
   DataShape _shape;
 
 public:
-  DataDeclIRNode(std::string &name, DataShape shape)
-      : IRNode(IRNode_DataDecl), _name(std::string(name)),
+  DataIRNode(std::string &name, DataShape shape)
+      : IRNode(IRNode_Data), _name(std::string(name)),
         _shape(std::move(shape)) {}
 
   std::string &getName() { return _name; }
   // ExprAST *getInitVal() { return initVal.get(); }
-  const DataShape &getType() { return _shape; }
+  const DataShape &getShape() { return _shape; }
 };
 
-class DataRefIRNode : public IRNode {
-private:
-  std::string _name;
-  DataShape _shape;
+// class DataRefIRNode : public IRNode {
+// private:
+//   std::string _name;
+//   DataShape _shape;
 
-public:
-};
+// public:
+// };
 
 class CallIRNode : public IRNode {
   std::string _callee_func_name;
@@ -111,11 +117,25 @@ public:
       : IRNode(IRNode_Mem), _obj(std::string(obj)), _mode(mode), _type(type) {}
 
   mem_access_type_t getMemAccessType() { return _type; }
-  void setAccessMode(mem_access_mode_t mode) { _mode = mode; }
+  void setAccessMode(mem_access_mode_t mode) { 
+    _mode = mode;     
+    if (_mode == READ) {
+      _mode_str = std::string("READ");
+    } else if (_mode == READ) {
+      _mode_str = std::string("WRITE");
+    } else if (_mode == READ) {
+      _mode_str = std::string("READ_WRITE");
+    }
+  }
+  mem_access_mode_t getAccessMode() {return _mode;}
+  std::string& getAccessModeString() {
+    return _mode_str;
+  }
 
 private:
   std::string _obj;
   mem_access_mode_t _mode;
+  std::string _mode_str;
   mem_access_type_t _type;
 };
 

@@ -11,4 +11,5 @@ add_library(IR
     for_irnode.cpp
     if_irnode.cpp
     irgraph.cpp
+    irgraph_dumper.cpp
 )
