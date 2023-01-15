@@ -124,7 +124,33 @@ void IRGraphDumper::dump(MemIRNode *mn) {
 void IRGraphDumper::dump(TaskIRNode *tn) {}
 void IRGraphDumper::dump(EinsumTaskIRNode *etn) {
   std::string shape = std::string("octagon");
-  std::string name = etn->getLHS() + " = " + etn->getRHS();
+  std::string name = etn->getLHS() + " = (" + etn->getRHS() + ")";
+  auto reduction_mode = etn->getReductionMode();
+  auto type = reduction_mode.getReductionType();
+  switch(type) {
+    case SUM: {
+      name += ".SUM(";
+      break;
+    } case MAX: {
+      name += ".MAX(";
+      break;
+    } case MIN: {
+      name += ".MIN(";
+      break;
+    } case AVG: {
+      name += ".AVG(";
+      break;
+    } default:
+      break;
+  }
+  auto num_dims = reduction_mode.getNumReductionDims();
+  
+  for (size_t i = 0; i < num_dims - 1; i++){
+    name += std::string(reduction_mode.getReductionDim(i)) + ',';
+  }
+
+  name += std::string(reduction_mode.getReductionDim(num_dims-1)) + ')';
+
   dumpNode(etn->getId(), name, shape);
 }
 void IRGraphDumper::dump(CommIRNode *cn) {}
