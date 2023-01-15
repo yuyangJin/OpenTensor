@@ -5,8 +5,8 @@
 
 // Clang includes
 #include "clang/AST/AST.h"
-#include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTConsumer.h"
+#include "clang/AST/ASTContext.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/RecursiveASTVisitor.h"
@@ -30,19 +30,20 @@
 #include <vector>
 
 // std::unique_ptr<IRGraph> _graph;
-IRGraph* _graph;
-std::unordered_map<std::string, irnode_id_t> _tensor_name_2_irnode_id; //latest_irnode
+IRGraph *_graph;
+std::unordered_map<std::string, irnode_id_t>
+    _tensor_name_2_irnode_id; // latest_irnode
 
-class ASTConverterClassVisitor : public clang::RecursiveASTVisitor<ASTConverterClassVisitor> {
+class ASTConverterClassVisitor
+    : public clang::RecursiveASTVisitor<ASTConverterClassVisitor> {
 private:
-    clang::ASTContext *astContext; // used for getting additional AST info
+  clang::ASTContext *astContext; // used for getting additional AST info
 public:
-    explicit ASTConverterClassVisitor(clang::CompilerInstance *CI) 
-      : astContext(&(CI->getASTContext()))  {}
-    virtual bool VisitVarDecl(clang::VarDecl *vd);
-    virtual bool VisitCXXMemberCallExpr(clang::CXXMemberCallExpr *cmce);
+  explicit ASTConverterClassVisitor(clang::CompilerInstance *CI)
+      : astContext(&(CI->getASTContext())) {}
+  virtual bool VisitVarDecl(clang::VarDecl *vd);
+  virtual bool VisitCXXMemberCallExpr(clang::CXXMemberCallExpr *cmce);
 };
-
 
 class ASTConverterCallback
     : public clang::ast_matchers::MatchFinder::MatchCallback {

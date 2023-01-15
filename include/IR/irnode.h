@@ -18,7 +18,7 @@ struct ArgList {
 };
 
 enum reduction_type_t {
-  SUM,
+  SUM = 50,
   MAX,
   MIN,
   AVG,
@@ -40,10 +40,21 @@ enum irnode_type_t {
   IRNode_Branch,
 };
 
+enum mem_access_mode_t {
+  READ,
+  WRITE,
+  READ_WRITE,
+};
+enum mem_access_type_t {
+  DRAM,
+};
+
 struct ReductionMode {
   std::vector<std::string> _reduction_dims;
   reduction_type_t _type;
 
+  void setType(reduction_type_t type) { _type = type; }
+  void addDim(std::string dim) { _reduction_dims.push_back(dim); }
   size_t getNumReductionDims() { return _reduction_dims.size(); }
   std::string &getReductionDim(size_t i) {
     if (i < _reduction_dims.size())
@@ -54,12 +65,11 @@ struct ReductionMode {
 
 class IRNode {
 public:
-
-  IRNode(irnode_type_t type) : _type(type) {_n_uid = global_n_id++;}
+  IRNode(irnode_type_t type) : _type(type) { _n_uid = global_n_id++; }
   virtual ~IRNode() = default;
 
   irnode_type_t getType() const { return _type; }
-  irnode_id_t getId() const {return _n_uid; }
+  irnode_id_t getId() const { return _n_uid; }
 
 private:
   irnode_type_t _type;
@@ -106,33 +116,21 @@ public:
 
 class MemIRNode : public IRNode {
 public:
-  enum mem_access_mode_t {
-    READ,
-    WRITE,
-    READ_WRITE,
-  };
-  enum mem_access_type_t {
-    DRAM,
-  };
-
   MemIRNode(std::string &obj, mem_access_mode_t mode, mem_access_type_t type)
-      : IRNode(IRNode_Mem), _obj(std::string(obj)), _mode(mode), _type(type) {}
-
-  mem_access_type_t getMemAccessType() { return _type; }
-  void setAccessMode(mem_access_mode_t mode) { 
-    _mode = mode;     
+      : IRNode(IRNode_Mem), _obj(std::string(obj)), _mode(mode), _type(type) {
     if (_mode == READ) {
       _mode_str = std::string("READ");
-    } else if (_mode == READ) {
+    } else if (_mode == WRITE) {
       _mode_str = std::string("WRITE");
-    } else if (_mode == READ) {
+    } else if (_mode == READ_WRITE) {
       _mode_str = std::string("READ_WRITE");
     }
   }
-  mem_access_mode_t getAccessMode() {return _mode;}
-  std::string& getAccessModeString() {
-    return _mode_str;
-  }
+
+  mem_access_type_t getMemAccessType() { return _type; }
+  void setAccessMode(mem_access_mode_t mode) { _mode = mode; }
+  mem_access_mode_t getAccessMode() { return _mode; }
+  std::string &getAccessModeString() { return _mode_str; }
 
 private:
   std::string _obj;
