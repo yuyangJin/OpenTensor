@@ -58,8 +58,9 @@ struct ReductionMode {
   void addDim(std::string dim) { _reduction_dims.push_back(dim); }
   size_t getNumReductionDims() { return _reduction_dims.size(); }
   std::string &getReductionDim(size_t i) {
-    if (i < _reduction_dims.size())
+    if (i < _reduction_dims.size()) {
       return _reduction_dims[i];
+    }
   }
   reduction_type_t getReductionType() { return _type; }
 };

@@ -9,7 +9,6 @@ int main() {
   C.zeros();
 
   Dim i, j, k;
-  // C["ij"] = (A["ik"] * B["kj"]);//.sum(k);
   C[i][j].einsum((A[i][k] * B[k][j]).sum(k));
 
   C.print();

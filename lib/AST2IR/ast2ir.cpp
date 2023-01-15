@@ -334,16 +334,18 @@ bool ASTConverterClassVisitor::VisitCXXMemberCallExpr(
               auto data_node_id = _tensor_name_2_irnode_id[tensor_str];
               _graph->addEdge(data_node_id, call_node_id);
 
-              DataShape tensor_shape;
-              auto tensor_node_id = _graph->addNode(
-                  std::make_shared<DataIRNode>(tensor_str, tensor_shape));
-              // auto tensor_node_id =
-              // _graph->addNode(std::make_unique<DataIRNode>(tensor_str,
-              // tensor_shape)); auto* tensor_node = new DataIRNode(tensor_str,
-              // tensor_shape); auto tensor_node_id =
-              // _graph->addNode(tensor_node);
-              _tensor_name_2_irnode_id[tensor_str] = tensor_node_id;
-              _graph->addEdge(call_node_id, tensor_node_id);
+              if(callee_str.compare("print") != 0) {
+                DataShape tensor_shape;
+                auto tensor_node_id = _graph->addNode(
+                    std::make_shared<DataIRNode>(tensor_str, tensor_shape));
+                // auto tensor_node_id =
+                // _graph->addNode(std::make_unique<DataIRNode>(tensor_str,
+                // tensor_shape)); auto* tensor_node = new DataIRNode(tensor_str,
+                // tensor_shape); auto tensor_node_id =
+                // _graph->addNode(tensor_node);
+                _tensor_name_2_irnode_id[tensor_str] = tensor_node_id;
+                _graph->addEdge(call_node_id, tensor_node_id);
+              }
             }
           }
         }
