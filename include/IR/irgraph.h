@@ -60,6 +60,7 @@ private:
   // void dump(edge_t& e);
   void dumpNode(irnode_id_t id, std::string &name, std::string &shape);
   void dumpEdge(edge_t &edge);
+  void dumpRegion(irnode_id_t id, std::string &name, IRNodeList* body, std::string &color);
 };
 
 #endif

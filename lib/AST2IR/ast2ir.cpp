@@ -100,6 +100,16 @@ public:
     }
   }
 
+  void getDims(std::vector<std::string> &dim_list) {
+    if (getType() == DIM) {
+      dim_list.push_back(getName());
+      return;
+    }
+    for (auto *child : _children) {
+      child->getDims(dim_list);
+    }
+  }
+
   std::string toString() {
     std::string str("");
     if (getType() == TENSOR) { // directly
@@ -187,6 +197,8 @@ bool ASTConverterClassVisitor::VisitCXXMemberCallExpr(
       std::string callee_str = me->getMemberNameInfo().getAsString();
       if (callee_str.compare("einsum") == 0) {
         // get LHS & write memnode
+        ExprPat* lhs_ep;
+        ExprPat* rhs_ep;
         std::string lhs_str;
         std::string rhs_str;
         ReductionMode reduction_mode;
@@ -197,7 +209,7 @@ bool ASTConverterClassVisitor::VisitCXXMemberCallExpr(
           if (clang::isa<clang::CXXOperatorCallExpr>(me_child)) {
             const auto *cxxoce =
                 clang::dyn_cast<clang::CXXOperatorCallExpr>(me_child);
-            auto *lhs_ep = getEP(cxxoce);
+            lhs_ep = getEP(cxxoce);
             lhs_str = lhs_ep->toString();
             dbg(lhs_str);
 
@@ -235,7 +247,7 @@ bool ASTConverterClassVisitor::VisitCXXMemberCallExpr(
                               clang::dyn_cast<clang::CXXOperatorCallExpr>(
                                   rhs_pe_child)) {
 
-                        auto *rhs_ep = getEP(rhs_cxxoce);
+                        rhs_ep = getEP(rhs_cxxoce);
                         rhs_str = rhs_ep->toString();
                         dbg(rhs_ep->toString());
 
@@ -257,17 +269,29 @@ bool ASTConverterClassVisitor::VisitCXXMemberCallExpr(
         }
 
         // build nodes
+        // build parallel node
+        DataShape para_shape;
+        lhs_ep->getDims(para_shape._dims);
+        dbg(para_shape._dims);
+        auto para_node = std::make_shared<ParaIRNode>(para_shape);
+        auto para_node_id =
+            _graph->addNode(para_node);
+
         // build einsum task node
         auto einsum_node_id =
             _graph->addNode(std::make_shared<EinsumTaskIRNode>(lhs_str, rhs_str,
                                                                reduction_mode));
+        para_node->addBodyNode(einsum_node_id);
+
 
         // build memory access node
         for (auto &tensor : write_tensors) {
           auto mem_node_id =
               _graph->addNode(std::make_shared<MemIRNode>(tensor, WRITE, DRAM));
+          para_node->addBodyNode(mem_node_id);
           auto tensor_node_id = _tensor_name_2_irnode_id[tensor];
           _graph->addEdge(tensor_node_id, mem_node_id);
+
 
           DataShape tensor_shape;
           auto new_tensor_node_id = _graph->addNode(
@@ -280,12 +304,15 @@ bool ASTConverterClassVisitor::VisitCXXMemberCallExpr(
         for (auto &tensor : read_tensors) {
           auto mem_node_id =
               _graph->addNode(std::make_shared<MemIRNode>(tensor, READ, DRAM));
+          para_node->addBodyNode(mem_node_id);
 
           _graph->addEdge(mem_node_id, einsum_node_id);
 
           auto tensor_node_id = _tensor_name_2_irnode_id[tensor];
           _graph->addEdge(tensor_node_id, mem_node_id);
         }
+
+        
 
       } else {
 

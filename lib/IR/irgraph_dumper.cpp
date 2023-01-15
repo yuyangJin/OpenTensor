@@ -35,13 +35,21 @@ void IRGraphDumper::dumpNode(irnode_id_t id, std::string &name,
   _fs << "  " << id << " [";
   _fs << "label=\"" << name << "\", ";
   _fs << "shape=" << shape;
-  _fs << ""
-      << "];\n";
+  // _fs << ",style=filled,color=white";
+  _fs << "];\n";
 }
 
-// void IRGraphDumper::dumpRegion() {
-
-// }
+void IRGraphDumper::dumpRegion(irnode_id_t id, std::string &name, IRNodeList* body, std::string &color) {
+  _fs << "  subgraph cluster" << id << " {";
+  _fs << "    label=\"" << name << "\";\n";
+  _fs << "    color=" << color << ";\n";
+  _fs << "    style=filled;\n";
+  _fs << "    node [style=filled,color=white]\n";
+  for (auto n: *body) {
+    _fs << "    " << n << ";\n";
+  }
+  _fs << "  }\n";
+}
 
 void IRGraphDumper::dump(IRNode *n) {
   if (n == nullptr) {
@@ -120,6 +128,14 @@ void IRGraphDumper::dump(EinsumTaskIRNode *etn) {
   dumpNode(etn->getId(), name, shape);
 }
 void IRGraphDumper::dump(CommIRNode *cn) {}
-void IRGraphDumper::dump(ParaIRNode *pn) {}
+void IRGraphDumper::dump(ParaIRNode *pn) {
+  std::string name = std::string("Parallel ( ");
+  for (auto& dim: pn->getParaShape()._dims) {
+    name += std::string(dim) + " ";
+  }
+  name += ")";
+  std::string color = std::string("lightblue");
+  dumpRegion(pn->getId(), name, pn->getBody(), color);
+}
 void IRGraphDumper::dump(ForIRNode *fn) {}
 void IRGraphDumper::dump(BranchIRNode *bn) {}

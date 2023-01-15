@@ -10,7 +10,8 @@ using irnode_id_t = size_t;
 static int global_n_id = 0;
 
 struct DataShape {
-  std::vector<int64_t> shape;
+  std::vector<std::string> _dims;
+  std::vector<int64_t> _shape;
 };
 
 struct ArgList {
@@ -76,7 +77,7 @@ private:
   irnode_id_t _n_uid;
 };
 
-using IRNodeList = std::vector<std::unique_ptr<IRNode>>;
+using IRNodeList = std::vector<irnode_id_t>;
 
 class DataIRNode : public IRNode {
   // private:
@@ -181,7 +182,12 @@ public:
   ParaIRNode(std::unique_ptr<IRNodeList> body, DataShape para_shape)
       : IRNode(IRNode_Parallel), _body(std::move(body)),
         _para_shape(std::move(para_shape)) {}
+  ParaIRNode(DataShape para_shape)
+      : IRNode(IRNode_Parallel), _para_shape(std::move(para_shape)) {
+        _body = std::make_unique<IRNodeList>();
+      }
 
+  void addBodyNode(irnode_id_t node) {_body->push_back(node);}
   IRNodeList *getBody() { return _body.get(); }
   DataShape &getParaShape() { return _para_shape; }
 };
