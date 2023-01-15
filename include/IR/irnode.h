@@ -185,10 +185,10 @@ public:
         _para_shape(std::move(para_shape)) {}
   ParaIRNode(DataShape para_shape)
       : IRNode(IRNode_Parallel), _para_shape(std::move(para_shape)) {
-        _body = std::make_unique<IRNodeList>();
-      }
+    _body = std::make_unique<IRNodeList>();
+  }
 
-  void addBodyNode(irnode_id_t node) {_body->push_back(node);}
+  void addBodyNode(irnode_id_t node) { _body->push_back(node); }
   IRNodeList *getBody() { return _body.get(); }
   DataShape &getParaShape() { return _para_shape; }
 };

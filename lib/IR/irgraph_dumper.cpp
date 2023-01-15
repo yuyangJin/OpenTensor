@@ -39,13 +39,14 @@ void IRGraphDumper::dumpNode(irnode_id_t id, std::string &name,
   _fs << "];\n";
 }
 
-void IRGraphDumper::dumpRegion(irnode_id_t id, std::string &name, IRNodeList* body, std::string &color) {
+void IRGraphDumper::dumpRegion(irnode_id_t id, std::string &name,
+                               IRNodeList *body, std::string &color) {
   _fs << "  subgraph cluster" << id << " {";
   _fs << "    label=\"" << name << "\";\n";
   _fs << "    color=" << color << ";\n";
   _fs << "    style=filled;\n";
   _fs << "    node [style=filled,color=white]\n";
-  for (auto n: *body) {
+  for (auto n : *body) {
     _fs << "    " << n << ";\n";
   }
   _fs << "  }\n";
@@ -127,36 +128,40 @@ void IRGraphDumper::dump(EinsumTaskIRNode *etn) {
   std::string name = etn->getLHS() + " = (" + etn->getRHS() + ")";
   auto reduction_mode = etn->getReductionMode();
   auto type = reduction_mode.getReductionType();
-  switch(type) {
-    case SUM: {
-      name += ".SUM(";
-      break;
-    } case MAX: {
-      name += ".MAX(";
-      break;
-    } case MIN: {
-      name += ".MIN(";
-      break;
-    } case AVG: {
-      name += ".AVG(";
-      break;
-    } default:
-      break;
+  switch (type) {
+  case SUM: {
+    name += ".SUM(";
+    break;
+  }
+  case MAX: {
+    name += ".MAX(";
+    break;
+  }
+  case MIN: {
+    name += ".MIN(";
+    break;
+  }
+  case AVG: {
+    name += ".AVG(";
+    break;
+  }
+  default:
+    break;
   }
   auto num_dims = reduction_mode.getNumReductionDims();
-  
-  for (size_t i = 0; i < num_dims - 1; i++){
+
+  for (size_t i = 0; i < num_dims - 1; i++) {
     name += std::string(reduction_mode.getReductionDim(i)) + ',';
   }
 
-  name += std::string(reduction_mode.getReductionDim(num_dims-1)) + ')';
+  name += std::string(reduction_mode.getReductionDim(num_dims - 1)) + ')';
 
   dumpNode(etn->getId(), name, shape);
 }
 void IRGraphDumper::dump(CommIRNode *cn) {}
 void IRGraphDumper::dump(ParaIRNode *pn) {
   std::string name = std::string("Parallel ( ");
-  for (auto& dim: pn->getParaShape()._dims) {
+  for (auto &dim : pn->getParaShape()._dims) {
     name += std::string(dim) + " ";
   }
   name += ")";
