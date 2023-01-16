@@ -59,6 +59,8 @@ private:
   void dump(BranchIRNode *bn);
   // void dump(edge_t& e);
   void dumpNode(irnode_id_t id, std::string &name, std::string &shape);
+  void dumpNode(irnode_id_t id, std::string &name, std::string &shape,
+                int font_size);
   void dumpEdge(edge_t &edge);
   void dumpRegion(irnode_id_t id, std::string &name, IRNodeList *body,
                   std::string &color);

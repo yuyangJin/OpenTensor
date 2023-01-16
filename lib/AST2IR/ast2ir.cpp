@@ -33,13 +33,39 @@ bool ASTConverterClassVisitor::VisitVarDecl(clang::VarDecl *vd) {
       std::string malloc_str = std::string("malloc");
       std::string tensor_str = vd->getNameAsString(); // Tensor name
 
-      // Get Tensor shape
+      /** Get Tensor shape */
       DataShape tensor_shape;
-      ArgList malloc_args;
-      /** TODO: Get Tenosr shape
-       */
+      const auto *vd_init = vd->getInit();
+      if (const auto *cxxce =
+              clang::dyn_cast<clang::CXXConstructExpr>(vd_init)) {
+        auto num_args = cxxce->getNumArgs();
+        for (unsigned int i = 0; i < num_args; i++) {
+          const auto *arg = cxxce->getArg(i);
+          if (const auto *il = clang::dyn_cast<clang::IntegerLiteral>(arg)) {
+            auto il_value = il->getValue().getSExtValue();
+            tensor_shape._shape.push_back(il_value);
+          }
+        }
+      }
+      dbg(tensor_shape._shape);
 
-      // Build malloc node and tensor data node
+      /** Get input args of malloc calls */
+      /** Convert tensor shape to malloc args
+       * (i, j, k) -> i * j * k
+       */
+      ArgList malloc_args;
+
+      auto num_dims = tensor_shape.getNumDims();
+      std::string arg_str("");
+      if (num_dims > 0) {
+        for (size_t i = 0; i < num_dims - 1; i++) {
+          arg_str += std::to_string(tensor_shape.getDim(i)) + "*";
+        }
+        arg_str += std::to_string(tensor_shape.getDim(num_dims - 1));
+      }
+      malloc_args.arg_list.push_back(arg_str);
+
+      // Build malloc (call) node and tensor data node
       auto malloc_node_id = _graph->addNode(
           std::make_shared<CallIRNode>(malloc_str, malloc_args));
 
@@ -225,7 +251,7 @@ bool ASTConverterClassVisitor::VisitCXXMemberCallExpr(
 
         /** Build nodes */
         // Build ParaIRNode
-        DataShape para_shape;
+        ParaShape para_shape;
         lhs_ep->getDims(para_shape._dims);
         /** TODO: Get parallelism shape (same as shape of dims, due to tensor
          * data is regular)

@@ -39,9 +39,18 @@ void IRGraphDumper::dumpNode(irnode_id_t id, std::string &name,
   _fs << "];\n";
 }
 
+void IRGraphDumper::dumpNode(irnode_id_t id, std::string &name,
+                             std::string &shape, int font_size) {
+  _fs << "  " << id << " [";
+  _fs << "label=\"" << name << "\", ";
+  _fs << "shape=" << shape << ",";
+  _fs << "fontsize=" << font_size;
+  _fs << "];\n";
+}
+
 void IRGraphDumper::dumpRegion(irnode_id_t id, std::string &name,
                                IRNodeList *body, std::string &color) {
-  _fs << "  subgraph cluster" << id << " {";
+  _fs << "  subgraph cluster" << id << " {\n";
   _fs << "    label=\"" << name << "\";\n";
   _fs << "    color=" << color << ";\n";
   _fs << "    style=filled;\n";
@@ -111,8 +120,21 @@ void IRGraphDumper::dump(IRNode *n) {
 }
 
 void IRGraphDumper::dump(DataIRNode *dn) {
-  std::string shape = std::string("circle");
-  dumpNode(dn->getId(), dn->getName(), shape);
+  std::string shape = std::string("ellipse");
+  std::string label = dn->getName();
+
+  auto &data_shape = dn->getShape();
+  auto num_dims = data_shape.getNumDims();
+  if (num_dims > 0) {
+    label += '<';
+    for (size_t i = 0; i < num_dims - 1; i++) {
+      label += std::to_string(data_shape.getDim(i)) + " ,";
+    }
+    label += std::to_string(data_shape.getDim(num_dims - 1));
+    label += '>';
+  }
+
+  dumpNode(dn->getId(), label, shape, 9);
 }
 void IRGraphDumper::dump(CallIRNode *cn) {
   std::string shape = std::string("box");

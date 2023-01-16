@@ -10,6 +10,13 @@ using irnode_id_t = size_t;
 static int global_n_id = 0;
 
 struct DataShape {
+  std::vector<int64_t> _shape;
+
+  size_t getNumDims() { return _shape.size(); }
+  int64_t getDim(size_t i) { return _shape[i]; }
+};
+
+struct ParaShape {
   std::vector<std::string> _dims;
   std::vector<int64_t> _shape;
 };
@@ -92,7 +99,7 @@ public:
 
   std::string &getName() { return _name; }
   // ExprAST *getInitVal() { return initVal.get(); }
-  const DataShape &getShape() { return _shape; }
+  DataShape &getShape() { return _shape; }
 };
 
 // class DataRefIRNode : public IRNode {
@@ -177,20 +184,20 @@ public:
 
 class ParaIRNode : public IRNode {
   std::unique_ptr<IRNodeList> _body;
-  DataShape _para_shape;
+  ParaShape _para_shape;
 
 public:
-  ParaIRNode(std::unique_ptr<IRNodeList> body, DataShape para_shape)
+  ParaIRNode(std::unique_ptr<IRNodeList> body, ParaShape para_shape)
       : IRNode(IRNode_Parallel), _body(std::move(body)),
         _para_shape(std::move(para_shape)) {}
-  ParaIRNode(DataShape para_shape)
+  ParaIRNode(ParaShape para_shape)
       : IRNode(IRNode_Parallel), _para_shape(std::move(para_shape)) {
     _body = std::make_unique<IRNodeList>();
   }
 
   void addBodyNode(irnode_id_t node) { _body->push_back(node); }
   IRNodeList *getBody() { return _body.get(); }
-  DataShape &getParaShape() { return _para_shape; }
+  ParaShape &getParaShape() { return _para_shape; }
 };
 
 class CtrlIRNode : public RegionIRNode {};
