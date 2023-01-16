@@ -300,15 +300,15 @@ bool ASTConverterClassVisitor::VisitCXXMemberCallExpr(
 
           // Build an edge bewtween write memory access node and einsum task
           // node
-          auto tensor_node_id = _tensor_name_2_irnode_id[tensor];
-          _graph->addEdge(tensor_node_id, mem_node_id);
+          auto input_tensor_node_id = _tensor_name_2_irnode_id[tensor];
+          _graph->addEdge(input_tensor_node_id, mem_node_id);
+          auto *input_tensor_node =
+              dynamic_cast<DataIRNode *>(_graph->getNode(input_tensor_node_id));
 
           // Build output tensor data node for WRITE operation
-          DataShape tensor_shape;
-          /** TODO: Get Tensor shape
-           */
-          auto output_tensor_node_id = _graph->addNode(
-              std::make_shared<DataIRNode>(tensor, tensor_shape));
+          auto output_tensor_node_id =
+              _graph->addNode(std::make_shared<DataIRNode>(
+                  tensor, input_tensor_node->getShape()));
           // Build edges bewtween einsum task node & write memory access node,
           // as well as write memory access node and output tensor data node
           _graph->addEdge(einsum_node_id, mem_node_id);
@@ -331,20 +331,20 @@ bool ASTConverterClassVisitor::VisitCXXMemberCallExpr(
 
               std::string tensor_str = dre->getNameInfo().getAsString();
               // Build edges bewtween input tensor data node & call node
-              auto data_node_id = _tensor_name_2_irnode_id[tensor_str];
-              _graph->addEdge(data_node_id, call_node_id);
+              auto input_tensor_node_id = _tensor_name_2_irnode_id[tensor_str];
+              _graph->addEdge(input_tensor_node_id, call_node_id);
 
               if (callee_str.compare("print") !=
                   0) { // Build output tensor data node except for print
                        // function.
-                DataShape tensor_shape;
-                /** TODO: Get Tensor shape
-                 */
-                auto tensor_node_id = _graph->addNode(
-                    std::make_shared<DataIRNode>(tensor_str, tensor_shape));
+                auto *input_tensor_node = dynamic_cast<DataIRNode *>(
+                    _graph->getNode(input_tensor_node_id));
+                auto output_tensor_node_id =
+                    _graph->addNode(std::make_shared<DataIRNode>(
+                        tensor_str, input_tensor_node->getShape()));
                 // Build edges bewtween call node & output tensor data node
-                _tensor_name_2_irnode_id[tensor_str] = tensor_node_id;
-                _graph->addEdge(call_node_id, tensor_node_id);
+                _tensor_name_2_irnode_id[tensor_str] = output_tensor_node_id;
+                _graph->addEdge(call_node_id, output_tensor_node_id);
               }
             }
           }
