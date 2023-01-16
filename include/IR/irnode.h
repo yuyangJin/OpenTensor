@@ -22,7 +22,11 @@ struct ParaShape {
 };
 
 struct ArgList {
-  std::vector<std::string> arg_list;
+  std::vector<std::string> _args;
+
+  void addArg(std::string arg) { _args.push_back(arg); }
+  size_t getNumArgs() { return _args.size(); }
+  std::string &getArg(size_t i) { return _args[i]; }
 };
 
 enum reduction_type_t {

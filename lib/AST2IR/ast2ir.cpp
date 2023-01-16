@@ -63,7 +63,7 @@ bool ASTConverterClassVisitor::VisitVarDecl(clang::VarDecl *vd) {
         }
         arg_str += std::to_string(tensor_shape.getDim(num_dims - 1));
       }
-      malloc_args.arg_list.push_back(arg_str);
+      malloc_args._args.push_back(arg_str);
 
       // Build malloc (call) node and tensor data node
       auto malloc_node_id = _graph->addNode(
@@ -150,6 +150,26 @@ ExprPat *getEP(const clang::CXXOperatorCallExpr *cxxoce) {
   return node;
 }
 
+void getArgs(clang::CallExpr *ce, ArgList &arg_list) {
+  auto num_args = ce->getNumArgs();
+  dbg(num_args);
+  for (unsigned int i = 0; i < num_args; i++) {
+    const auto *arg = ce->getArg(i);
+    if (const auto *dre = clang::dyn_cast<clang::DeclRefExpr>(arg)) {
+      arg_list.addArg(dre->getNameInfo().getAsString());
+    } else if (const auto *il = clang::dyn_cast<clang::IntegerLiteral>(arg)) {
+      auto il_value = il->getValue().getSExtValue();
+      arg_list.addArg(std::to_string(il_value));
+    } else if (const auto *fl = clang::dyn_cast<clang::FloatingLiteral>(arg)) {
+      auto fl_value = fl->getValue().convertToFloat();
+      arg_list.addArg(std::to_string(fl_value));
+    } else if (const auto *ice =
+                   clang::dyn_cast<clang::ImplicitCastExpr>(arg)) {
+      // recursively get arg
+    }
+  }
+}
+
 /**
  * @brief Identify Tensor function calls
  *
@@ -159,192 +179,202 @@ ExprPat *getEP(const clang::CXXOperatorCallExpr *cxxoce) {
  */
 bool ASTConverterClassVisitor::VisitCXXMemberCallExpr(
     clang::CXXMemberCallExpr *cmce) {
-  /** TODO: Check if it is in main file
-   */
-  /** TODO: Check if it is class Tensor's member functions
-   */
+  /** Check if it is in main file */
+  if (astContext->getSourceManager().isInMainFile(
+          cmce->getExprLoc())) { // Check whether the node is in the main input
+                                 // file.
+    /** Check if it is class Tensor's member functions */
+    dbg(cmce->getObjectType().getAsString());
+    if (cmce->getObjectType().getAsString().compare("class Tensor") == 0) {
 
-  ArgList call_args;
+      /** Get args */
+      ArgList call_args;
+      getArgs(cmce, call_args);
+      dbg(call_args._args);
 
-  for (const clang::Stmt *child : cmce->children()) {
-    if (const auto *me = clang::dyn_cast<clang::MemberExpr>(child)) {
+      for (const clang::Stmt *child : cmce->children()) {
+        if (const auto *me = clang::dyn_cast<clang::MemberExpr>(child)) {
 
-      // Get callee function name
-      std::string callee_str = me->getMemberNameInfo().getAsString();
+          // Get callee function name
+          std::string callee_str = me->getMemberNameInfo().getAsString();
 
-      if (callee_str.compare("einsum") ==
-          0) { // Convert einsum notation to IRNode
-        /**  Einsum notation expression is : LHS    .einsum((RHS
-         * ).REDUCTION_TYPE(REDUCTION_DIMS)) C[i][j].einsum((A[i][k] *
-         * B[k][j]).sum           (k             )) Here we need to get LHS,
-         * RHS, REDUCTION_TYPE, and REDUCTION_DIMS from clang AST.
-         */
+          if (callee_str.compare("einsum") ==
+              0) { // Convert einsum notation to IRNode
+            /**  Einsum notation expression is : LHS    .einsum((RHS
+             * ).REDUCTION_TYPE(REDUCTION_DIMS)) C[i][j].einsum((A[i][k] *
+             * B[k][j]).sum           (k             )) Here we need to get LHS,
+             * RHS, REDUCTION_TYPE, and REDUCTION_DIMS from clang AST.
+             */
 
-        ExprPat *lhs_ep; // Contain LHS
-        ExprPat *rhs_ep; // Contain RHS
+            ExprPat *lhs_ep; // Contain LHS
+            ExprPat *rhs_ep; // Contain RHS
 
-        ReductionMode
-            reduction_mode; // Contain REDUCTION_TYPE and REDUCTION_DIMS
+            ReductionMode
+                reduction_mode; // Contain REDUCTION_TYPE and REDUCTION_DIMS
 
-        // Get LHS by getEP function
-        for (const auto *me_child : me->children()) {
-          if (const auto *lhs_cxxoce =
-                  clang::dyn_cast<clang::CXXOperatorCallExpr>(me_child)) {
-            lhs_ep = getEP(lhs_cxxoce);
-          }
-        }
+            // Get LHS by getEP function
+            for (const auto *me_child : me->children()) {
+              if (const auto *lhs_cxxoce =
+                      clang::dyn_cast<clang::CXXOperatorCallExpr>(me_child)) {
+                lhs_ep = getEP(lhs_cxxoce);
+              }
+            }
 
-        for (const auto *einsum_child : cmce->children()) {
-          if (const auto *arg_cxxmce =
-                  clang::dyn_cast<clang::CXXMemberCallExpr>(
-                      einsum_child)) { // Handle the arg of einsum function
-                                       // (between parentheses)
+            for (const auto *einsum_child : cmce->children()) {
+              if (const auto *arg_cxxmce =
+                      clang::dyn_cast<clang::CXXMemberCallExpr>(
+                          einsum_child)) { // Handle the arg of einsum function
+                                           // (between parentheses)
 
-            for (const auto *reduction_type_cxxmce_child :
-                 arg_cxxmce->children()) {
+                for (const auto *reduction_type_cxxmce_child :
+                     arg_cxxmce->children()) {
 
-              if (const auto *reduction_type_me =
-                      clang::dyn_cast<clang::MemberExpr>(
-                          reduction_type_cxxmce_child)) { // Get REDUCTION TYPE
-                std::string reduction_type_str =
-                    reduction_type_me->getMemberNameInfo().getAsString();
+                  if (const auto *reduction_type_me =
+                          clang::dyn_cast<clang::MemberExpr>(
+                              reduction_type_cxxmce_child)) { // Get REDUCTION
+                                                              // TYPE
+                    std::string reduction_type_str =
+                        reduction_type_me->getMemberNameInfo().getAsString();
 
-                // dbg(reduction_type_str);
-                if (reduction_type_str.compare("sum") == 0) {
-                  reduction_mode.setType(SUM);
-                } else if (reduction_type_str.compare("max") == 0) {
-                  reduction_mode.setType(MAX);
-                } else if (reduction_type_str.compare("min") == 0) {
-                  reduction_mode.setType(MIN);
-                } else if (reduction_type_str.compare("avg") == 0) {
-                  reduction_mode.setType(AVG);
-                }
+                    // dbg(reduction_type_str);
+                    if (reduction_type_str.compare("sum") == 0) {
+                      reduction_mode.setType(SUM);
+                    } else if (reduction_type_str.compare("max") == 0) {
+                      reduction_mode.setType(MAX);
+                    } else if (reduction_type_str.compare("min") == 0) {
+                      reduction_mode.setType(MIN);
+                    } else if (reduction_type_str.compare("avg") == 0) {
+                      reduction_mode.setType(AVG);
+                    }
 
-                // Get RHS by getEP function
-                for (const auto *reduction_me_child :
-                     reduction_type_me->children()) {
-                  if (const auto *rhs_pe = clang::dyn_cast<clang::ParenExpr>(
-                          reduction_me_child)) { // The AST child of
-                                                 // reduction_me is (RHS)
+                    // Get RHS by getEP function
+                    for (const auto *reduction_me_child :
+                         reduction_type_me->children()) {
+                      if (const auto *rhs_pe =
+                              clang::dyn_cast<clang::ParenExpr>(
+                                  reduction_me_child)) { // The AST child of
+                                                         // reduction_me is
+                                                         // (RHS)
 
-                    for (const auto *rhs_pe_child : rhs_pe->children()) {
-                      if (const auto *rhs_cxxoce =
-                              clang::dyn_cast<clang::CXXOperatorCallExpr>(
-                                  rhs_pe_child)) {
-                        rhs_ep = getEP(rhs_cxxoce);
+                        for (const auto *rhs_pe_child : rhs_pe->children()) {
+                          if (const auto *rhs_cxxoce =
+                                  clang::dyn_cast<clang::CXXOperatorCallExpr>(
+                                      rhs_pe_child)) {
+                            rhs_ep = getEP(rhs_cxxoce);
+                          }
+                        }
                       }
                     }
-                  }
-                }
 
-              } else if (const auto *reduction_dre =
-                             clang::dyn_cast<clang::DeclRefExpr>(
+                  } else if (const auto *reduction_dre = clang::dyn_cast<
+                                 clang::DeclRefExpr>(
                                  reduction_type_cxxmce_child)) { // Get
                                                                  // REDUCTION
                                                                  // DIMS
-                reduction_mode.addDim(
-                    reduction_dre->getNameInfo().getAsString());
+                    reduction_mode.addDim(
+                        reduction_dre->getNameInfo().getAsString());
+                  }
+                }
               }
             }
-          }
-        }
 
-        /** Build nodes */
-        // Build ParaIRNode
-        ParaShape para_shape;
-        lhs_ep->getDims(para_shape._dims);
-        /** TODO: Get parallelism shape (same as shape of dims, due to tensor
-         * data is regular)
-         */
-        // dbg(para_shape._dims);
-        auto para_node = std::make_shared<ParaIRNode>(para_shape);
-        auto para_node_id = _graph->addNode(para_node);
+            /** Build nodes */
+            // Build ParaIRNode
+            ParaShape para_shape;
+            lhs_ep->getDims(para_shape._dims);
+            /** TODO: Get parallelism shape (same as shape of dims, due to
+             * tensor data is regular)
+             */
+            // dbg(para_shape._dims);
+            auto para_node = std::make_shared<ParaIRNode>(para_shape);
+            auto para_node_id = _graph->addNode(para_node);
 
-        // Build EinsumTaskIRNode
-        std::string lhs_str;
-        std::string rhs_str;
-        lhs_str = lhs_ep->toString();
-        // dbg(lhs_str);
-        rhs_str = rhs_ep->toString();
-        // dbg(rhs_str);
-        auto einsum_node_id =
-            _graph->addNode(std::make_shared<EinsumTaskIRNode>(lhs_str, rhs_str,
-                                                               reduction_mode));
-        para_node->addBodyNode(
-            einsum_node_id); // EinsumTaskIRNode is body node of ParaIRNode
+            // Build EinsumTaskIRNode
+            std::string lhs_str;
+            std::string rhs_str;
+            lhs_str = lhs_ep->toString();
+            // dbg(lhs_str);
+            rhs_str = rhs_ep->toString();
+            // dbg(rhs_str);
+            auto einsum_node_id =
+                _graph->addNode(std::make_shared<EinsumTaskIRNode>(
+                    lhs_str, rhs_str, reduction_mode));
+            para_node->addBodyNode(
+                einsum_node_id); // EinsumTaskIRNode is body node of ParaIRNode
 
-        // Build MemIRNode, including read & write node
-        std::vector<std::string> write_tensors;
-        std::vector<std::string> read_tensors;
-        lhs_ep->getTensors(write_tensors);
-        rhs_ep->getTensors(read_tensors);
+            // Build MemIRNode, including read & write node
+            std::vector<std::string> write_tensors;
+            std::vector<std::string> read_tensors;
+            lhs_ep->getTensors(write_tensors);
+            rhs_ep->getTensors(read_tensors);
 
-        // Read MemIRNode
-        for (auto &tensor : read_tensors) {
-          auto mem_node_id =
-              _graph->addNode(std::make_shared<MemIRNode>(tensor, READ, DRAM));
-          para_node->addBodyNode(
-              mem_node_id); // MemIRNode is body node of ParaIRNode
-          // Build edges bewtween input tensor data node and read memory access
-          // node, as well as read memory access node and einsum task node
-          auto tensor_node_id = _tensor_name_2_irnode_id[tensor];
-          _graph->addEdge(tensor_node_id, mem_node_id);
-          _graph->addEdge(mem_node_id, einsum_node_id);
-        }
-        // Write MemIRNode
-        for (auto &tensor : write_tensors) {
-          auto mem_node_id =
-              _graph->addNode(std::make_shared<MemIRNode>(tensor, WRITE, DRAM));
-          para_node->addBodyNode(
-              mem_node_id); // MemIRNode is body node of ParaIRNode
+            // Read MemIRNode
+            for (auto &tensor : read_tensors) {
+              auto mem_node_id = _graph->addNode(
+                  std::make_shared<MemIRNode>(tensor, READ, DRAM));
+              para_node->addBodyNode(
+                  mem_node_id); // MemIRNode is body node of ParaIRNode
+              // Build edges bewtween input tensor data node and read memory
+              // access node, as well as read memory access node and einsum task
+              // node
+              auto tensor_node_id = _tensor_name_2_irnode_id[tensor];
+              _graph->addEdge(tensor_node_id, mem_node_id);
+              _graph->addEdge(mem_node_id, einsum_node_id);
+            }
+            // Write MemIRNode
+            for (auto &tensor : write_tensors) {
+              auto mem_node_id = _graph->addNode(
+                  std::make_shared<MemIRNode>(tensor, WRITE, DRAM));
+              para_node->addBodyNode(
+                  mem_node_id); // MemIRNode is body node of ParaIRNode
 
-          // Build an edge bewtween write memory access node and einsum task
-          // node
-          auto input_tensor_node_id = _tensor_name_2_irnode_id[tensor];
-          _graph->addEdge(input_tensor_node_id, mem_node_id);
-          auto *input_tensor_node =
-              dynamic_cast<DataIRNode *>(_graph->getNode(input_tensor_node_id));
+              // Build an edge bewtween write memory access node and einsum task
+              // node
+              auto input_tensor_node_id = _tensor_name_2_irnode_id[tensor];
+              _graph->addEdge(input_tensor_node_id, mem_node_id);
+              auto *input_tensor_node = dynamic_cast<DataIRNode *>(
+                  _graph->getNode(input_tensor_node_id));
 
-          // Build output tensor data node for WRITE operation
-          auto output_tensor_node_id =
-              _graph->addNode(std::make_shared<DataIRNode>(
-                  tensor, input_tensor_node->getShape()));
-          // Build edges bewtween einsum task node & write memory access node,
-          // as well as write memory access node and output tensor data node
-          _graph->addEdge(einsum_node_id, mem_node_id);
-          _tensor_name_2_irnode_id[tensor] = output_tensor_node_id;
-          _graph->addEdge(mem_node_id, output_tensor_node_id);
-        }
+              // Build output tensor data node for WRITE operation
+              auto output_tensor_node_id =
+                  _graph->addNode(std::make_shared<DataIRNode>(
+                      tensor, input_tensor_node->getShape()));
+              // Build edges bewtween einsum task node & write memory access
+              // node, as well as write memory access node and output tensor
+              // data node
+              _graph->addEdge(einsum_node_id, mem_node_id);
+              _tensor_name_2_irnode_id[tensor] = output_tensor_node_id;
+              _graph->addEdge(mem_node_id, output_tensor_node_id);
+            }
 
-      } else { // For other Tensor member (builtin) function calls
+          } else { // For other Tensor member (builtin) function calls
 
-        for (const auto *subchild : me->children()) {
-          if (const auto *dre = clang::dyn_cast<clang::DeclRefExpr>(subchild)) {
-            std::string dre_type = dre->getType().getAsString();
+            for (const auto *subchild : me->children()) {
+              if (const auto *dre =
+                      clang::dyn_cast<clang::DeclRefExpr>(subchild)) {
 
-            if (dre_type.compare("class Tensor") ==
-                0) { // Determine whether it is member functions of class Tensor
+                // Build CallIRNode for Tensor member function calls
+                auto call_node_id = _graph->addNode(
+                    std::make_shared<CallIRNode>(callee_str, call_args));
 
-              // Build CallIRNode for Tensor member function calls
-              auto call_node_id = _graph->addNode(
-                  std::make_shared<CallIRNode>(callee_str, call_args));
+                std::string tensor_str = dre->getNameInfo().getAsString();
+                // Build edges bewtween input tensor data node & call node
+                auto input_tensor_node_id =
+                    _tensor_name_2_irnode_id[tensor_str];
+                _graph->addEdge(input_tensor_node_id, call_node_id);
 
-              std::string tensor_str = dre->getNameInfo().getAsString();
-              // Build edges bewtween input tensor data node & call node
-              auto input_tensor_node_id = _tensor_name_2_irnode_id[tensor_str];
-              _graph->addEdge(input_tensor_node_id, call_node_id);
-
-              if (callee_str.compare("print") !=
-                  0) { // Build output tensor data node except for print
-                       // function.
-                auto *input_tensor_node = dynamic_cast<DataIRNode *>(
-                    _graph->getNode(input_tensor_node_id));
-                auto output_tensor_node_id =
-                    _graph->addNode(std::make_shared<DataIRNode>(
-                        tensor_str, input_tensor_node->getShape()));
-                // Build edges bewtween call node & output tensor data node
-                _tensor_name_2_irnode_id[tensor_str] = output_tensor_node_id;
-                _graph->addEdge(call_node_id, output_tensor_node_id);
+                if (callee_str.compare("print") !=
+                    0) { // Build output tensor data node except for print
+                         // function.
+                  auto *input_tensor_node = dynamic_cast<DataIRNode *>(
+                      _graph->getNode(input_tensor_node_id));
+                  auto output_tensor_node_id =
+                      _graph->addNode(std::make_shared<DataIRNode>(
+                          tensor_str, input_tensor_node->getShape()));
+                  // Build edges bewtween call node & output tensor data node
+                  _tensor_name_2_irnode_id[tensor_str] = output_tensor_node_id;
+                  _graph->addEdge(call_node_id, output_tensor_node_id);
+                }
               }
             }
           }

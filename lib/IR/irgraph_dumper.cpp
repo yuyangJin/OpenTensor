@@ -128,7 +128,7 @@ void IRGraphDumper::dump(DataIRNode *dn) {
   if (num_dims > 0) {
     label += '<';
     for (size_t i = 0; i < num_dims - 1; i++) {
-      label += std::to_string(data_shape.getDim(i)) + " ,";
+      label += std::to_string(data_shape.getDim(i)) + ", ";
     }
     label += std::to_string(data_shape.getDim(num_dims - 1));
     label += '>';
@@ -138,7 +138,20 @@ void IRGraphDumper::dump(DataIRNode *dn) {
 }
 void IRGraphDumper::dump(CallIRNode *cn) {
   std::string shape = std::string("box");
-  dumpNode(cn->getId(), cn->getCalleeFuncName(), shape);
+  std::string label = cn->getCalleeFuncName();
+  label += '(';
+  auto &args = cn->getArgs();
+  auto num_args = args.getNumArgs();
+  if (num_args > 0) {
+
+    for (size_t i = 0; i < num_args - 1; i++) {
+      label += args.getArg(i) + ", ";
+    }
+    label += args.getArg(num_args - 1);
+  }
+  label += ')';
+
+  dumpNode(cn->getId(), label, shape, 10);
 }
 void IRGraphDumper::dump(MemIRNode *mn) {
   std::string shape = std::string("box");
