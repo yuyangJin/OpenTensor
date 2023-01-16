@@ -24,6 +24,7 @@ set(DEP_CLANG_LIBS
 set(LIBS
     AST2IR
     IR
+    IR2SYCL
 )
 
 add_executable(
