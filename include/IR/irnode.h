@@ -63,6 +63,7 @@ enum mem_access_type_t {
 
 struct ReductionMode {
   std::vector<std::string> _reduction_dims;
+  std::vector<int64_t> _reduction_shape;
   reduction_type_t _type;
 
   void setType(reduction_type_t type) { _type = type; }
@@ -115,15 +116,17 @@ public:
 // };
 
 class CallIRNode : public IRNode {
+  std::string _obj_name;
   std::string _callee_func_name;
   ArgList _args;
 
 public:
-  CallIRNode(std::string &func_name, ArgList args)
-      : IRNode(IRNode_Call), _callee_func_name(std::string(func_name)),
-        _args(std::move(args)) {}
+  CallIRNode(std::string &obj_name, std::string &func_name, ArgList args)
+      : IRNode(IRNode_Call), _obj_name(obj_name),
+        _callee_func_name(std::string(func_name)), _args(std::move(args)) {}
 
   std::string &getCalleeFuncName() { return _callee_func_name; }
+  std::string &getObjName() { return _obj_name; }
   ArgList &getArgs() { return _args; }
 };
 
@@ -132,11 +135,11 @@ public:
   MemIRNode(std::string &obj, mem_access_mode_t mode, mem_access_type_t type)
       : IRNode(IRNode_Mem), _obj(std::string(obj)), _mode(mode), _type(type) {
     if (_mode == READ) {
-      _mode_str = std::string("READ");
+      _mode_str = std::string("read");
     } else if (_mode == WRITE) {
-      _mode_str = std::string("WRITE");
+      _mode_str = std::string("write");
     } else if (_mode == READ_WRITE) {
-      _mode_str = std::string("READ_WRITE");
+      _mode_str = std::string("read_write");
     }
   }
 

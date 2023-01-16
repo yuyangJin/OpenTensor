@@ -66,7 +66,7 @@ bool ASTConverterClassVisitor::VisitVarDecl(clang::VarDecl *vd) {
 
       // Build malloc (call) node and tensor data node
       auto malloc_node_id = _graph->addNode(
-          std::make_shared<CallIRNode>(malloc_str, malloc_args));
+          std::make_shared<CallIRNode>(tensor_str, malloc_str, malloc_args));
 
       auto tensor_node_id = _graph->addNode(
           std::make_shared<DataIRNode>(tensor_str, tensor_shape));
@@ -349,12 +349,13 @@ bool ASTConverterClassVisitor::VisitCXXMemberCallExpr(
             for (const auto *subchild : me->children()) {
               if (const auto *dre =
                       clang::dyn_cast<clang::DeclRefExpr>(subchild)) {
+                std::string tensor_str = dre->getNameInfo().getAsString();
 
                 // Build CallIRNode for Tensor member function calls
-                auto call_node_id = _graph->addNode(
-                    std::make_shared<CallIRNode>(callee_str, call_args));
+                auto call_node_id =
+                    _graph->addNode(std::make_shared<CallIRNode>(
+                        tensor_str, callee_str, call_args));
 
-                std::string tensor_str = dre->getNameInfo().getAsString();
                 // Build edges bewtween input tensor data node & call node
                 auto input_tensor_node_id =
                     _tensor_name_2_irnode_id[tensor_str];
@@ -422,66 +423,70 @@ ASTConverterClassConsumer::ASTConverterClassConsumer(
  */
 void ASTConverterCallback::run(
     const clang::ast_matchers::MatchFinder::MatchResult &Result) {
-  if (const auto *func =
-          Result.Nodes.getNodeAs<clang::FunctionDecl>("FuncDecl_In_MainFile")) {
-    std::string funcName = func->getNameInfo().getName().getAsString();
-    llvm::errs() << "Function: " << funcName << "\n";
-  }
-  if (const auto *vd =
-          Result.Nodes.getNodeAs<clang::VarDecl>("TensorVarDecl")) {
-    llvm::errs() << "TensorVarDecl:"
-                 << "\n";
-    llvm::errs() << vd->getType().getAsString() << "\n";
-    llvm::errs() << vd->getNameAsString() << "\n";
+  // if (const auto *func =
+  //         Result.Nodes.getNodeAs<clang::FunctionDecl>("FuncDecl_In_MainFile"))
+  //         {
+  //   std::string funcName = func->getNameInfo().getName().getAsString();
+  //   llvm::errs() << "Function: " << funcName << "\n";
+  // }
+  // if (const auto *vd =
+  //         Result.Nodes.getNodeAs<clang::VarDecl>("TensorVarDecl")) {
+  //   llvm::errs() << "TensorVarDecl:"
+  //                << "\n";
+  //   llvm::errs() << vd->getType().getAsString() << "\n";
+  //   llvm::errs() << vd->getNameAsString() << "\n";
 
-    std::string malloc_str = std::string("malloc");
-    std::string tensor_str = vd->getNameAsString();
+  //   std::string malloc_str = std::string("malloc");
+  //   std::string tensor_str = vd->getNameAsString();
 
-    ArgList malloc_args;
+  //   ArgList malloc_args;
 
-    DataShape tensor_shape;
+  //   DataShape tensor_shape;
 
-    auto malloc_node_id =
-        _graph->addNode(std::make_shared<CallIRNode>(malloc_str, malloc_args));
+  //   auto malloc_node_id =
+  //       _graph->addNode(std::make_shared<CallIRNode>(tensor_str, malloc_str,
+  //       malloc_args));
 
-    auto tensor_node_id =
-        _graph->addNode(std::make_shared<DataIRNode>(tensor_str, tensor_shape));
+  //   auto tensor_node_id =
+  //       _graph->addNode(std::make_shared<DataIRNode>(tensor_str,
+  //       tensor_shape));
 
-    _tensor_name_2_irnode_id[tensor_str] = tensor_node_id;
+  //   _tensor_name_2_irnode_id[tensor_str] = tensor_node_id;
 
-    _graph->addEdge(malloc_node_id, tensor_node_id);
-  }
+  //   _graph->addEdge(malloc_node_id, tensor_node_id);
+  // }
 
-  if (const auto *cmce = Result.Nodes.getNodeAs<clang::CXXMemberCallExpr>(
-          "TensorCXXMemberCallExpr")) {
-    llvm::errs() << "TensorCXXMemberCallExpr:"
-                 << "\n";
-    ArgList call_args;
+  // if (const auto *cmce = Result.Nodes.getNodeAs<clang::CXXMemberCallExpr>(
+  //         "TensorCXXMemberCallExpr")) {
+  //   llvm::errs() << "TensorCXXMemberCallExpr:"
+  //                << "\n";
+  //   ArgList call_args;
 
-    for (const clang::Stmt *child : cmce->children()) {
-      if (clang::isa<clang::MemberExpr>(child)) {
-        const auto *me = clang::dyn_cast<clang::MemberExpr>(child);
-        llvm::errs() << me->getMemberNameInfo().getAsString() << "\n";
-        std::string callee_str = me->getMemberNameInfo().getAsString();
-        auto call_node_id = _graph->addNode(
-            std::make_shared<CallIRNode>(callee_str, call_args));
+  //   for (const clang::Stmt *child : cmce->children()) {
+  //     if (clang::isa<clang::MemberExpr>(child)) {
+  //       const auto *me = clang::dyn_cast<clang::MemberExpr>(child);
+  //       llvm::errs() << me->getMemberNameInfo().getAsString() << "\n";
+  //       std::string callee_str = me->getMemberNameInfo().getAsString();
+  //       auto call_node_id = _graph->addNode(
+  //           std::make_shared<CallIRNode>(callee_str, call_args));
 
-        for (const auto *subchild : me->children()) {
-          if (const auto *dre = clang::dyn_cast<clang::DeclRefExpr>(subchild)) {
-            llvm::errs() << dre->getNameInfo().getAsString() << "\n";
-            std::string tensor_str = dre->getNameInfo().getAsString();
-            auto data_node_id = _tensor_name_2_irnode_id[tensor_str];
-            _graph->addEdge(data_node_id, call_node_id);
+  //       for (const auto *subchild : me->children()) {
+  //         if (const auto *dre =
+  //         clang::dyn_cast<clang::DeclRefExpr>(subchild)) {
+  //           llvm::errs() << dre->getNameInfo().getAsString() << "\n";
+  //           std::string tensor_str = dre->getNameInfo().getAsString();
+  //           auto data_node_id = _tensor_name_2_irnode_id[tensor_str];
+  //           _graph->addEdge(data_node_id, call_node_id);
 
-            DataShape tensor_shape;
-            auto tensor_node_id = _graph->addNode(
-                std::make_shared<DataIRNode>(tensor_str, tensor_shape));
+  //           DataShape tensor_shape;
+  //           auto tensor_node_id = _graph->addNode(
+  //               std::make_shared<DataIRNode>(tensor_str, tensor_shape));
 
-            _tensor_name_2_irnode_id[tensor_str] = tensor_node_id;
-            _graph->addEdge(call_node_id, tensor_node_id);
-          }
-        }
-      }
-    }
-  }
+  //           _tensor_name_2_irnode_id[tensor_str] = tensor_node_id;
+  //           _graph->addEdge(call_node_id, tensor_node_id);
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
 }

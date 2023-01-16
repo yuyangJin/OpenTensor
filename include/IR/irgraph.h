@@ -4,37 +4,39 @@
 #include "IR/irnode.h"
 #include "dbg.h"
 #include <fstream>
+#include <map>
 #include <memory>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
-using edge_t = std::pair<irnode_id_t, irnode_id_t>;
+using edge_t = std::pair<const irnode_id_t, irnode_id_t>;
 
 class IRGraph {
 private:
   std::vector<std::shared_ptr<IRNode>> _nodes;
   // std::vector<std::unique_ptr<IRNode>> _nodes;
-  // std::vector<IRNode*> _nodes;
   std::unordered_map<irnode_id_t, int> _irnode_id_to_idx_map;
 
-  std::vector<edge_t> _edges;
+  // std::vector<edge_t> _edges;
+  std::multimap<irnode_id_t, irnode_id_t> _edges;
+  std::multimap<irnode_id_t, irnode_id_t> _reverse_edges;
 
 public:
   IRGraph() {}
   irnode_id_t addNode(std::shared_ptr<IRNode> node);
-  // irnode_id_t addNode(std::unique_ptr<IRNode> node);
-  // irnode_id_t addNode(IRNode* node);
   void addEdge(irnode_id_t src, irnode_id_t dest);
   IRNode *getNode(irnode_id_t id);
-  std::vector<std::shared_ptr<IRNode>> &getNodes() { return _nodes; }
-  // std::vector<std::unique_ptr<IRNode>>& getNodes() {return _nodes;}
-  // std::vector<IRNode*>& getNodes() {return _nodes;}
-  std::vector<edge_t> &getEdges() { return _edges; }
 
-  // void dumpGraph();
-  // void dumpEdge(std::ofstream& fs, std::pair<irnode_id_t, irnode_id_t>&
-  // edge); IRNodeList* getInNode(); IRNodeList* getOutNode();
+  size_t getNumNodes() { return _nodes.size(); }
+  size_t getNumEdges() { return _edges.size(); }
+  std::vector<std::shared_ptr<IRNode>> &getNodes() { return _nodes; }
+  std::multimap<irnode_id_t, irnode_id_t> &getEdges() { return _edges; }
+
+  IRNodeList *getSrcNodes(irnode_id_t id);
+  IRNodeList *getDestNodes(irnode_id_t id);
+
+  IRNodeList *getNodesWithoutInEdges();
 };
 
 class SpmdIRGraph : public IRGraph {};
