@@ -47,7 +47,6 @@ bool ASTConverterClassVisitor::VisitVarDecl(clang::VarDecl *vd) {
           }
         }
       }
-      dbg(tensor_shape._shape);
 
       /** Get input args of malloc calls */
       /** Convert tensor shape to malloc args
@@ -152,7 +151,6 @@ ExprPat *getEP(const clang::CXXOperatorCallExpr *cxxoce) {
 
 void getArgs(clang::CallExpr *ce, ArgList &arg_list) {
   auto num_args = ce->getNumArgs();
-  dbg(num_args);
   for (unsigned int i = 0; i < num_args; i++) {
     const auto *arg = ce->getArg(i);
     if (const auto *dre = clang::dyn_cast<clang::DeclRefExpr>(arg)) {
@@ -184,13 +182,11 @@ bool ASTConverterClassVisitor::VisitCXXMemberCallExpr(
           cmce->getExprLoc())) { // Check whether the node is in the main input
                                  // file.
     /** Check if it is class Tensor's member functions */
-    dbg(cmce->getObjectType().getAsString());
     if (cmce->getObjectType().getAsString().compare("class Tensor") == 0) {
 
       /** Get args */
       ArgList call_args;
       getArgs(cmce, call_args);
-      dbg(call_args._args);
 
       for (const clang::Stmt *child : cmce->children()) {
         if (const auto *me = clang::dyn_cast<clang::MemberExpr>(child)) {
@@ -236,7 +232,6 @@ bool ASTConverterClassVisitor::VisitCXXMemberCallExpr(
                     std::string reduction_type_str =
                         reduction_type_me->getMemberNameInfo().getAsString();
 
-                    // dbg(reduction_type_str);
                     if (reduction_type_str.compare("sum") == 0) {
                       reduction_mode.setType(SUM);
                     } else if (reduction_type_str.compare("max") == 0) {
@@ -278,14 +273,22 @@ bool ASTConverterClassVisitor::VisitCXXMemberCallExpr(
               }
             }
 
+            std::vector<std::string> write_tensors;
+            std::vector<std::string> read_tensors;
+            lhs_ep->getTensors(write_tensors);
+            rhs_ep->getTensors(read_tensors);
+
             /** Build nodes */
             // Build ParaIRNode
             ParaShape para_shape;
+            /** Get parallelism shape (same as shape of dims, due to
+             * tensor data is regular) */
             lhs_ep->getDims(para_shape._dims);
-            /** TODO: Get parallelism shape (same as shape of dims, due to
-             * tensor data is regular)
-             */
-            // dbg(para_shape._dims);
+            auto *lhs_tensor_node = dynamic_cast<DataIRNode *>(
+                _graph->getNode(_tensor_name_2_irnode_id[write_tensors[0]]));
+            para_shape._shape = lhs_tensor_node->getShape()._shape;
+            dbg(para_shape._shape);
+            dbg(para_shape._dims);
             auto para_node = std::make_shared<ParaIRNode>(para_shape);
             auto para_node_id = _graph->addNode(para_node);
 
@@ -293,9 +296,7 @@ bool ASTConverterClassVisitor::VisitCXXMemberCallExpr(
             std::string lhs_str;
             std::string rhs_str;
             lhs_str = lhs_ep->toString();
-            // dbg(lhs_str);
             rhs_str = rhs_ep->toString();
-            // dbg(rhs_str);
             auto einsum_node_id =
                 _graph->addNode(std::make_shared<EinsumTaskIRNode>(
                     lhs_str, rhs_str, reduction_mode));
@@ -303,10 +304,6 @@ bool ASTConverterClassVisitor::VisitCXXMemberCallExpr(
                 einsum_node_id); // EinsumTaskIRNode is body node of ParaIRNode
 
             // Build MemIRNode, including read & write node
-            std::vector<std::string> write_tensors;
-            std::vector<std::string> read_tensors;
-            lhs_ep->getTensors(write_tensors);
-            rhs_ep->getTensors(read_tensors);
 
             // Read MemIRNode
             for (auto &tensor : read_tensors) {
