@@ -158,8 +158,9 @@ void CodeGenerator::generate(EinsumTaskIRNode *etn) {
   dbg(etn->getLHS(), etn->getRHS());
   for (size_t i = 0; i < num_dims; i++) {
     std::string &dim_name = reduction_mode.getReductionDim(i);
-    _fs << "for(size_t " << dim_name << " = 0; " << dim_name << " < 4; "
-        << dim_name << "++) {" << std::endl;
+    _fs << "for(size_t " << dim_name << " = 0; " << dim_name << " < "
+        << reduction_mode.getReductionShape(i) << "; " << dim_name << "++) {"
+        << std::endl;
   }
   _fs << "  " << etn->getLHS() << " ";
   if (reduction_type == SUM) {
@@ -256,6 +257,10 @@ void CodeGenerator::generate(std::string &file_name) {
   _fs.open(file_name, std::ios::out);
 
   /** Generate SYCL code from IRGraph */
+
+  _fs << "#include \"opentenser.h\"" << std::endl
+      << "int main() {" << std::endl;
+
   _fs << "// Creating SYCL queue" << std::endl
       << "sycl::queue Queue;" << std::endl;
 
@@ -350,4 +355,6 @@ void CodeGenerator::generate(std::string &file_name) {
     }
 
   } /** end while*/
+
+  _fs << "}";
 }

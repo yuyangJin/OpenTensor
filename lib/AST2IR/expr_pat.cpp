@@ -1,5 +1,5 @@
 #include "AST2IR/expr_pat.h"
-
+#include "dbg.h"
 void ExprPat::addChild(ExprPat *node) {
   _children.push_back(node);
   _numChildren++;
@@ -23,6 +23,33 @@ void ExprPat::getDims(std::vector<std::string> &dim_list) {
   for (auto *child : _children) {
     child->getDims(dim_list);
   }
+}
+
+ExprPat *ExprPat::getTensorByName(std::string &tensor_name) {
+  if (getType() == TENSOR && tensor_name.compare(getName()) == 0) {
+    return this;
+  }
+  for (auto *child : _children) {
+    return child->getTensorByName(tensor_name);
+  }
+  return nullptr;
+}
+
+std::vector<std::string> *ExprPat::getDimsOfTensor(std::string &tensor_name) {
+  auto *dim_list = new std::vector<std::string>();
+
+  auto *tensor_node = getTensorByName(tensor_name);
+
+  dbg(tensor_node);
+
+  if (tensor_node != nullptr) {
+    for (auto *child : tensor_node->getChildren()) {
+      if (child->getType() == DIM) {
+        dim_list->emplace_back(child->getName());
+      }
+    }
+  }
+  return dim_list;
 }
 
 std::string ExprPat::toString() {

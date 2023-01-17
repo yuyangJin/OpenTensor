@@ -32,12 +32,18 @@ public:
 
   ep_type_t getType() { return _type; }
   std::string &getName() { return _name; }
+
   int getNumChildren() { return _numChildren; }
+  std::vector<ExprPat *> &getChildren() { return _children; }
   void addChild(ExprPat *node);
 
   void getTensors(std::vector<std::string> &tensor_list);
 
   void getDims(std::vector<std::string> &dim_list);
+
+  ExprPat *getTensorByName(std::string &tensor_name);
+
+  std::vector<std::string> *getDimsOfTensor(std::string &tensor_name);
 
   std::string toString();
 };

@@ -72,12 +72,10 @@ struct ReductionMode {
 
   void setType(reduction_type_t type) { _type = type; }
   void addDim(std::string dim) { _reduction_dims.push_back(dim); }
+  void addShape(int64_t len) { _reduction_shape.push_back(len); }
   size_t getNumReductionDims() { return _reduction_dims.size(); }
-  std::string &getReductionDim(size_t i) {
-    if (i < _reduction_dims.size()) {
-      return _reduction_dims[i];
-    }
-  }
+  std::string &getReductionDim(size_t i) { return _reduction_dims[i]; }
+  int64_t &getReductionShape(size_t i) { return _reduction_shape[i]; }
   reduction_type_t getReductionType() { return _type; }
 };
 
@@ -95,7 +93,7 @@ public:
     _region_node_id = region_node_id;
   }
   bool hasRegionNode() {
-    if (_region_node_id != -1) {
+    if (_region_node_id != (irnode_id_t)-1) {
       return true;
     } else {
       return false;

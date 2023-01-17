@@ -297,6 +297,38 @@ bool ASTConverterClassVisitor::VisitCXXMemberCallExpr(
             std::string rhs_str;
             lhs_str = lhs_ep->toString();
             rhs_str = rhs_ep->toString();
+
+            /** Get reduction shape from RHS and tensor data shape
+             * For example, sum(k)
+             * A[i][k], A<3, 4> => k = 4
+             */
+            for (size_t i = 0; i < reduction_mode.getNumReductionDims(); i++) {
+              auto &reduction_dim = reduction_mode.getReductionDim(i);
+              bool got_dim_len = false;
+              for (auto &rhs_tensor : read_tensors) {
+                auto rhs_tensor_node_id = _tensor_name_2_irnode_id[rhs_tensor];
+                auto *rhs_tensor_node = dynamic_cast<DataIRNode *>(
+                    _graph->getNode(rhs_tensor_node_id));
+                auto &rhs_tensor_shape = rhs_tensor_node->getShape();
+                auto *dims = rhs_ep->getDimsOfTensor(rhs_tensor);
+
+                dbg(*dims);
+
+                for (size_t j = 0; j < dims->size(); j++) {
+                  if (reduction_dim.compare((*dims)[j]) == 0) {
+                    reduction_mode.addShape(rhs_tensor_shape.getDim(j));
+                    got_dim_len = true;
+                    break;
+                  }
+                }
+                if (got_dim_len) {
+                  break;
+                }
+              }
+            }
+
+            dbg(reduction_mode._reduction_shape);
+
             auto einsum_node = std::make_shared<EinsumTaskIRNode>(
                 lhs_str, rhs_str, reduction_mode);
             auto einsum_node_id = _graph->addNode(einsum_node);
