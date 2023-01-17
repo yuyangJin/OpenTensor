@@ -297,20 +297,23 @@ bool ASTConverterClassVisitor::VisitCXXMemberCallExpr(
             std::string rhs_str;
             lhs_str = lhs_ep->toString();
             rhs_str = rhs_ep->toString();
-            auto einsum_node_id =
-                _graph->addNode(std::make_shared<EinsumTaskIRNode>(
-                    lhs_str, rhs_str, reduction_mode));
+            auto einsum_node = std::make_shared<EinsumTaskIRNode>(
+                lhs_str, rhs_str, reduction_mode);
+            auto einsum_node_id = _graph->addNode(einsum_node);
             para_node->addBodyNode(
                 einsum_node_id); // EinsumTaskIRNode is body node of ParaIRNode
+            einsum_node->setRegionNode(para_node_id);
 
             // Build MemIRNode, including read & write node
 
             // Read MemIRNode
             for (auto &tensor : read_tensors) {
-              auto mem_node_id = _graph->addNode(
-                  std::make_shared<MemIRNode>(tensor, READ, DRAM));
+              auto mem_node = std::make_shared<MemIRNode>(tensor, READ, DRAM);
+              auto mem_node_id = _graph->addNode(mem_node);
               para_node->addBodyNode(
                   mem_node_id); // MemIRNode is body node of ParaIRNode
+              mem_node->setRegionNode(para_node_id);
+
               // Build edges bewtween input tensor data node and read memory
               // access node, as well as read memory access node and einsum task
               // node
@@ -320,10 +323,11 @@ bool ASTConverterClassVisitor::VisitCXXMemberCallExpr(
             }
             // Write MemIRNode
             for (auto &tensor : write_tensors) {
-              auto mem_node_id = _graph->addNode(
-                  std::make_shared<MemIRNode>(tensor, WRITE, DRAM));
+              auto mem_node = std::make_shared<MemIRNode>(tensor, WRITE, DRAM);
+              auto mem_node_id = _graph->addNode(mem_node);
               para_node->addBodyNode(
                   mem_node_id); // MemIRNode is body node of ParaIRNode
+              mem_node->setRegionNode(para_node_id);
 
               // Build an edge bewtween write memory access node and einsum task
               // node

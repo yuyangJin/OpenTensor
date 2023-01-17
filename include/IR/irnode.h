@@ -7,7 +7,7 @@
 
 using irnode_id_t = size_t;
 
-static int global_n_id = 0;
+static int global_node_id = 0;
 
 struct DataShape {
   std::vector<int64_t> _shape;
@@ -19,6 +19,10 @@ struct DataShape {
 struct ParaShape {
   std::vector<std::string> _dims;
   std::vector<int64_t> _shape;
+
+  size_t getNumDims() { return _dims.size(); }
+  std::string &getDim(size_t i) { return _dims[i]; }
+  int64_t getDimLen(size_t i) { return _shape[i]; }
 };
 
 struct ArgList {
@@ -79,15 +83,30 @@ struct ReductionMode {
 
 class IRNode {
 public:
-  IRNode(irnode_type_t type) : _type(type) { _n_uid = global_n_id++; }
+  IRNode(irnode_type_t type) : _type(type) {
+    _node_id = global_node_id++;
+    _region_node_id = -1; // -1 stands for this node has no outer region
+  }
   virtual ~IRNode() = default;
 
   irnode_type_t getType() const { return _type; }
-  irnode_id_t getId() const { return _n_uid; }
+  irnode_id_t getId() const { return _node_id; }
+  void setRegionNode(irnode_id_t region_node_id) {
+    _region_node_id = region_node_id;
+  }
+  bool hasRegionNode() {
+    if (_region_node_id != -1) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  irnode_id_t getRegionNode() const { return _region_node_id; }
 
 private:
   irnode_type_t _type;
-  irnode_id_t _n_uid;
+  irnode_id_t _node_id;
+  irnode_id_t _region_node_id;
 };
 
 using IRNodeList = std::vector<irnode_id_t>;
@@ -183,27 +202,26 @@ class RegionIRNode : public IRNode {
   std::unique_ptr<IRNodeList> _body;
 
 public:
-  RegionIRNode(std::unique_ptr<IRNodeList> body)
-      : IRNode(IRNode_Region), _body(std::move(body)) {}
+  RegionIRNode(irnode_type_t type) : IRNode(type) {
+    _body = std::make_unique<IRNodeList>();
+  }
+  RegionIRNode(irnode_type_t type, std::unique_ptr<IRNodeList> body)
+      : IRNode(type), _body(std::move(body)) {}
 
+  void addBodyNode(irnode_id_t node) { _body->push_back(node); }
   IRNodeList *getBody() { return _body.get(); }
 };
 
-class ParaIRNode : public IRNode {
-  std::unique_ptr<IRNodeList> _body;
+class ParaIRNode : public RegionIRNode {
   ParaShape _para_shape;
 
 public:
   ParaIRNode(std::unique_ptr<IRNodeList> body, ParaShape para_shape)
-      : IRNode(IRNode_Parallel), _body(std::move(body)),
+      : RegionIRNode(IRNode_Parallel, std::move(body)),
         _para_shape(std::move(para_shape)) {}
   ParaIRNode(ParaShape para_shape)
-      : IRNode(IRNode_Parallel), _para_shape(std::move(para_shape)) {
-    _body = std::make_unique<IRNodeList>();
-  }
+      : RegionIRNode(IRNode_Parallel), _para_shape(std::move(para_shape)) {}
 
-  void addBodyNode(irnode_id_t node) { _body->push_back(node); }
-  IRNodeList *getBody() { return _body.get(); }
   ParaShape &getParaShape() { return _para_shape; }
 };
 

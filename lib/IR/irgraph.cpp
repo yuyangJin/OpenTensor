@@ -35,6 +35,21 @@ IRNodeList *IRGraph::getSrcNodes(irnode_id_t id) {
 
 IRNodeList *IRGraph::getDestNodes(irnode_id_t id) {
   IRNodeList *dest_nodes = new IRNodeList();
+
+  /** For ParaIRNode, get all dest nodes of its body nodes
+   */
+  if (auto *para_node = dynamic_cast<ParaIRNode *>(getNode(id))) {
+    auto *body = para_node->getBody();
+    for (auto body_node_id : *body) {
+      auto *dest_nodes_of_body_node = getDestNodes(body_node_id);
+      for (auto dest_node_id : *dest_nodes_of_body_node) {
+        dest_nodes->emplace_back(dest_node_id);
+      }
+      /** TODO: free IRNodeList*/
+    }
+    return dest_nodes;
+  }
+
   auto start = _edges.lower_bound(id);
   auto end = _edges.upper_bound(id);
 
@@ -55,6 +70,9 @@ IRNodeList *IRGraph::getNodesWithoutInEdges() {
     if (_reverse_edges.find(kv.first) ==
         _reverse_edges.end()) { // irnode id is not found as the src node of
                                 // reverse edge (same as dest node of edge)
+      if (auto *para_node = dynamic_cast<ParaIRNode *>(getNode(kv.first))) {
+        continue;
+      }
       nodes->emplace_back(kv.first);
     }
   }

@@ -132,26 +132,84 @@ void CodeGenerator::generate(EinsumTaskIRNode *etn) {
   }
 }
 void CodeGenerator::generate(CommIRNode *cn) {}
-void CodeGenerator::generate(ParaIRNode *pn) {}
+void CodeGenerator::generate(ParaIRNode *pn) {
+  auto *body = pn->getBody();
+
+  /** Generate memory access */
+  _fs << "Queue.submit([&](sycl::handler &cgh) {" << std::endl
+      << "  // Getting access to the buffer on a device" << std::endl;
+
+  for (auto body_node_id : *body) {
+    auto *body_node = _graph->getNode(body_node_id);
+    if (body_node->getType() == IRNode_Mem) {
+      _fs << "  ";
+      generate(dynamic_cast<MemIRNode *>(body_node));
+    }
+  }
+  /** Generate kernels */
+  _fs << "  // Executing kernel" << std::endl;
+
+  auto &para_shape = pn->getParaShape();
+  auto num_dims = para_shape.getNumDims();
+
+  /** TODO: check num_dims > 0 */
+  _fs << "  cgh.parallel_for<class "
+      << "einsum" << pn->getId() << ">(sycl::range<" << num_dims << ">(";
+
+  for (size_t i = 0; i < num_dims - 1; i++) {
+    _fs << para_shape.getDimLen(i) << ", ";
+  }
+  _fs << para_shape.getDimLen(num_dims - 1);
+
+  _fs << "), [=](sycl::id<" << num_dims << "> idx) {" << std::endl;
+
+  for (size_t i = 0; i < num_dims; i++) {
+    _fs << "    size_t " << para_shape.getDim(i) << " = idx[" << i << "];"
+        << std::endl;
+  }
+
+  for (auto body_node_id : *body) {
+    auto *body_node = _graph->getNode(body_node_id);
+    if (body_node->getType() == IRNode_EinsumTask) {
+      _fs << "";
+      generate(dynamic_cast<EinsumTaskIRNode *>(body_node));
+    }
+  }
+
+  _fs << "  });" << std::endl;
+
+  _fs << "}).wait();" << std::endl;
+}
 void CodeGenerator::generate(ForIRNode *fn) {}
 void CodeGenerator::generate(BranchIRNode *bn) {}
 
-bool CodeGenerator::isNodesAccessed(IRNodeList *src_nodes) {
-  bool all_src_nodes_are_accessed = true;
-  for (auto src_node_id : *src_nodes) {
+bool CodeGenerator::isNodesAccessed(IRNodeList *nodes) {
+  bool all_nodes_are_accessed = true;
+  for (auto node_id : *nodes) {
     IRNodeList::iterator it =
-        find(_accessed_nodelist.begin(), _accessed_nodelist.end(), src_node_id);
+        find(_accessed_nodelist.begin(), _accessed_nodelist.end(), node_id);
     if (it == _accessed_nodelist.end()) { // has not accessed
-      all_src_nodes_are_accessed = false;
+      all_nodes_are_accessed = false;
       break;
     }
   }
-  return all_src_nodes_are_accessed;
+  return all_nodes_are_accessed;
 }
 
 bool CodeGenerator::isSrcNodesAccessed(irnode_id_t node_id) {
-  auto *src_nodes = _graph->getSrcNodes(node_id);
-  return isNodesAccessed(src_nodes);
+  if (auto *para_node = dynamic_cast<ParaIRNode *>(_graph->getNode(node_id))) {
+    auto *body = para_node->getBody();
+    for (auto body_node_id : *body) {
+      auto *src_nodes = _graph->getSrcNodes(body_node_id);
+      if (!isNodesAccessed(src_nodes)) {
+        return false;
+      }
+    }
+    return true;
+  } else {
+    auto *src_nodes = _graph->getSrcNodes(node_id);
+    return isNodesAccessed(src_nodes);
+  }
 }
 
 void CodeGenerator::generate(std::string &file_name) {
@@ -187,6 +245,7 @@ void CodeGenerator::generate(std::string &file_name) {
      *    if dest nodes are accessed,
      *      then continue
      *    else,
+     *      insert related nodes into accessed nodelist
      *      if dest nodes' input data(src ) node are accessed,
      *        then insert dest nodes into generating nodelist,
      *      else,
@@ -200,17 +259,38 @@ void CodeGenerator::generate(std::string &file_name) {
       if (it != _accessed_nodelist.end()) { // has accessed
         continue;
       } else {
+        /**  insert related nodes into accessed nodelist */
+        auto *dest_node = _graph->getNode(dest_node_id);
+
+        if (dest_node->hasRegionNode()) { // has region node
+          /**  handle ParaIRNode */
+          auto region_node_id = dest_node->getRegionNode();
+          dest_node_id = region_node_id;
+          if (auto *para_node = dynamic_cast<ParaIRNode *>(_graph->getNode(
+                  region_node_id))) { // region node is ParaIRNode
+            /** insert all body nodes into accessed nodelist, so that they will
+             * not be accessed again, ParaIRNode will generate code for these
+             * body node */
+            auto *body = para_node->getBody();
+            dbg(*body);
+            for (auto body_node_id : *body) {
+              _accessed_nodelist.emplace_back(body_node_id);
+            }
+          }
+        }
+        /**  insert dest node into accessed nodelist */
+        _accessed_nodelist.emplace_back(dest_node_id);
+
         if (isSrcNodesAccessed(dest_node_id)) {
           _generating_nodelist.emplace_back(dest_node_id);
         } else {
           _waiting_nodelist.emplace_back(dest_node_id);
         }
-        /**   2.3 insert all dest nodes into accessed_nodelist */
-        _accessed_nodelist.emplace_back(dest_node_id);
       }
     }
+    dbg(_accessed_nodelist);
 
-    /**   2.4 check nodes in waiting node (here accessed nodelist is updated),
+    /**   2.3 check nodes in waiting node (here accessed nodelist is updated),
      *    if nodes' input data node (src node) are ready (accessed),
      *      then move it to generating nodelist from waiting nodelist
      *    else,
