@@ -60,15 +60,54 @@ void CodeGenerator::generate(DataIRNode *dn) {
   std::string &tensor_name = dn->getName();
   auto &tensor_shape = dn->getShape();
   auto num_dims = tensor_shape.getNumDims();
-  dbg(tensor_name, num_dims);
-  if (num_dims > 0) {
-    _fs << "sycl::buffer<DATA_TYPE, " << num_dims << "> " << tensor_name
-        << "_buffer(_" << tensor_name << ", sycl::range<" << num_dims << ">(";
-    for (size_t i = 0; i < num_dims - 1; i++) {
-      _fs << tensor_shape.getDim(i) << ", ";
+
+  /** If next node is ParaIRNode, then do the belowing things */
+  auto *dest_nodes = _graph->getDestNodes(dn->getId());
+  bool is_dest_einsum_node = false;
+  for (auto dest_node_id : *dest_nodes) {
+    auto *dest_node = _graph->getNode(dest_node_id);
+    if (dest_node->hasRegionNode()) {
+      dbg(dest_node->getRegionNode());
+      dbg(_graph->getNode(dest_node->getRegionNode())->getType());
+      if (_graph->getNode(dest_node->getRegionNode())->getType() ==
+          IRNode_Parallel) {
+        is_dest_einsum_node = true;
+        break;
+      }
     }
-    _fs << tensor_shape.getDim(num_dims - 1);
-    _fs << "));" << std::endl;
+  }
+
+  auto *src_nodes = _graph->getSrcNodes(dn->getId());
+  bool is_src_einsum_node = false;
+  for (auto src_node_id : *src_nodes) {
+    auto *src_node = _graph->getNode(src_node_id);
+    if (src_node->hasRegionNode()) {
+      dbg(src_node->getRegionNode());
+      if (_graph->getNode(src_node->getRegionNode())->getType() ==
+          IRNode_Parallel) {
+        is_src_einsum_node = true;
+        break;
+      }
+    }
+  }
+
+  dbg(dn->getId(), tensor_name, is_dest_einsum_node, is_src_einsum_node);
+
+  if (is_dest_einsum_node) {
+    if (num_dims > 0) {
+      _fs << "sycl::buffer<DATA_TYPE, " << num_dims << "> " << tensor_name
+          << "_buffer(_" << tensor_name << ", sycl::range<" << num_dims << ">(";
+      for (size_t i = 0; i < num_dims - 1; i++) {
+        _fs << tensor_shape.getDim(i) << ", ";
+      }
+      _fs << tensor_shape.getDim(num_dims - 1);
+      _fs << "));" << std::endl;
+    }
+  }
+
+  if (is_src_einsum_node) {
+    _fs << "_" << tensor_name << " = " << tensor_name
+        << "_buffer.get_access<sycl::access::mode::read>();" << std::endl;
   }
 }
 void CodeGenerator::generate(CallIRNode *cn) {
