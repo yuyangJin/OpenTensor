@@ -356,5 +356,5 @@ void CodeGenerator::generate(std::string &file_name) {
 
   } /** end while*/
 
-  _fs << "}";
+  _fs << "}" << std::endl;
 }
