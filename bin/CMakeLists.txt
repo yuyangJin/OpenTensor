@@ -23,8 +23,8 @@ set(DEP_CLANG_LIBS
 
 set(LIBS
     AST2IR
-    IR
-    IR2SYCL
+    # IR
+    # IR2SYCL
 )
 
 add_executable(
@@ -32,4 +32,4 @@ add_executable(
     opentensor.cpp
 )
 
-target_link_libraries(OpenTensor PRIVATE ${LIBS} ${DEP_CLANG_LIBS})
+target_link_libraries(OpenTensor PRIVATE ${LIBS} ${DEP_CLANG_LIBS} )

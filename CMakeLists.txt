@@ -43,6 +43,13 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/third_party/dbg)
 
+if (!$ENV{POWFU_DIR})
+  message(FATAL_ERROR "not defined environment variable:POWFU_DIR")
+endif()
+include_directories(${POWFU_DIR}/include)
+link_directories(${POWFU_DIR}/lib)
+add_compile_options(-lstdc++fs -std=c++17)
+
 
 add_subdirectory(lib)
 add_subdirectory(bin)

@@ -25,10 +25,15 @@ set(DEP_CLANG_LIBS
     clangDynamicASTMatchers
 )
 
+set(PF_LIBS
+    PowerFusion
+)
+
 add_library(AST2IR
     SHARED
     ast2ir.cpp
     expr_pat.cpp
 )
 
-target_link_libraries(AST2IR ${DEP_CLANG_LIBS})
+
+target_link_libraries(AST2IR ${DEP_CLANG_LIBS} ${PF_LIBS})

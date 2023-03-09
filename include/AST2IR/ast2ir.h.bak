@@ -1,6 +1,8 @@
 #ifndef AST_TO_IR_H_
 #define AST_TO_IR_H_
 
+#include "IR/irgraph.h"
+
 #include <iostream>
 #include "core/manager.h"
 #include "codegen/utils.h"
@@ -31,12 +33,16 @@
 #include <unordered_map>
 #include <vector>
 
+// std::unique_ptr<IRGraph> _graph;
+IRGraph *_graph;
 
 std::shared_ptr<memb::Manager> _manager;
 std::vector<std::shared_ptr<memb::ExternalEntry>> _ops;
 std::vector<std::shared_ptr<memb::ExternalEntry>> _tensors;
 
 
+std::unordered_map<std::string, irnode_id_t>
+    _tensor_name_2_irnode_id; // latest_irnode
 
 class ASTConverterClassVisitor
     : public clang::RecursiveASTVisitor<ASTConverterClassVisitor> {
@@ -59,6 +65,8 @@ public:
 
 class ASTConverterClassConsumer : public clang::ASTConsumer {
 private:
+  // clang::ast_matchers::MatchFinder match_finder;
+  // ASTConverterCallback handler;
   ASTConverterClassVisitor *visitor;
 
 public:
@@ -66,6 +74,7 @@ public:
   explicit ASTConverterClassConsumer(clang::CompilerInstance *CI);
 
   virtual void HandleTranslationUnit(clang::ASTContext &Context) {
+    // match_finder.matchAST(Context);
     visitor->TraverseDecl(Context.getTranslationUnitDecl());
   }
 };
@@ -85,7 +94,9 @@ class ASTConverter {
 public:
   ASTConverter(int argc, const char **argv) {
 
-    // build Graph
+    // build IRGraph
+    // _graph = std::make_unique<IRGraph>();
+    _graph = new IRGraph();
     _manager = std::make_shared<memb::Manager>();
 
 
@@ -101,17 +112,9 @@ public:
                                    OptionsParser.getSourcePathList());
     Tool.run(clang::tooling::newFrontendActionFactory<ASTConverterClassAction>()
                  .get());
-
   }
 
-  // IRGraph *getIRGraph() { return _graph; }
-
-  void generate() {
-    auto codes = _manager->generate(_ops, _tensors);
-    for (size_t i = 0; i < codes.size(); i++) {
-        memb::exportCode("matmul_" + std::to_string(i) + ".cuh", codes[i]);
-    }
-  }
+  IRGraph *getIRGraph() { return _graph; }
 };
 
 #endif // AST_TO_IR_H_
