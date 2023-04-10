@@ -1,7 +1,8 @@
 import ast
 from ast import *
 import sys
-
+import TensorIR as tir
+from TensorIR import *
 
 
 class ASTVisitor(ast.NodeVisitor):
@@ -45,3 +46,28 @@ if __name__ == '__main__':
     visitor.visit(_ast)
 
     print(ast.dump(_ast), sep='\n')
+
+    
+    irgraph = tir.IRGraph()
+
+    ds = tir.DataShape()
+    ds.add_dim(3)
+    ds.add_dim(4)
+    dn1 = tir.DataIRNode('A', ds)
+
+    dn2 = tir.DataIRNode('B', ds)
+
+    dn1_id = irgraph.add_datanode(dn1)
+    dn2_id = irgraph.add_datanode(dn2)
+
+    bn3 = tir.BinIRNode('+')
+
+    bn3_id = irgraph.add_binnode(bn3)
+
+    irgraph.add_edge(dn1_id, dn2_id)
+    irgraph.add_edge(dn1_id, bn3_id)
+    irgraph.add_edge(dn2_id, bn3_id)
+
+    dumper = tir.IRGraphDumper()
+    dumper.dump(irgraph)
+    print('end')
