@@ -12,7 +12,7 @@ static int global_node_id = 0;
 class DataShape {
   std::vector<int64_t> _shape;
 public:
-  void addDim(int64_t d) {_shape.emplace_back(d);}
+  void addDim(int64_t d) {_shape.push_back(d);}
   // void addDims(int64_t d) {_shape.emplace_back(d);}
   size_t getNumDims() { return _shape.size(); }
   int64_t getDim(size_t i) { return _shape[i]; }
@@ -83,7 +83,7 @@ struct ReductionMode {
   reduction_type_t getReductionType() { return _type; }
 };
 
-class IRNode {
+class IRNode{
 public:
   IRNode(irnode_type_t type) : _type(type) {
     _node_id = global_node_id++;
@@ -226,24 +226,32 @@ private:
 class CommIRNode : public IRNode {};
 
 class RegionIRNode : public IRNode {
-  std::unique_ptr<IRNodeList> _body;
+  // std::unique_ptr<IRNodeList> _body;
+  IRNodeList* _body;
 
 public:
   RegionIRNode(irnode_type_t type) : IRNode(type) {
-    _body = std::make_unique<IRNodeList>();
+    // _body = std::make_unique<IRNodeList>();
+    _body = new IRNodeList();
   }
-  RegionIRNode(irnode_type_t type, std::unique_ptr<IRNodeList> body)
-      : IRNode(type), _body(std::move(body)) {}
+  // RegionIRNode(irnode_type_t type, std::unique_ptr<IRNodeList> body)
+      // : IRNode(type), _body(std::move(body)) {}
+  RegionIRNode(irnode_type_t type, IRNodeList* body)
+      : IRNode(type), _body(body) {}
 
   void addBodyNode(irnode_id_t node) { _body->push_back(node); }
-  IRNodeList *getBody() { return _body.get(); }
+  // IRNodeList *getBody() { return _body.get(); }
+  IRNodeList *getBody() { return _body; }
 };
 
 class ParaIRNode : public RegionIRNode {
   ParaShape _para_shape;
 
 public:
-  ParaIRNode(std::unique_ptr<IRNodeList> body, ParaShape para_shape)
+  // ParaIRNode(std::unique_ptr<IRNodeList> body, ParaShape para_shape)
+  //     : RegionIRNode(irnode_type_t::IRNode_Parallel, std::move(body)),
+  //       _para_shape(std::move(para_shape)) {}
+  ParaIRNode(IRNodeList* body, ParaShape para_shape)
       : RegionIRNode(irnode_type_t::IRNode_Parallel, std::move(body)),
         _para_shape(std::move(para_shape)) {}
   ParaIRNode(ParaShape para_shape)

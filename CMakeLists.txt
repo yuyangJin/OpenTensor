@@ -2,19 +2,21 @@ cmake_minimum_required(VERSION 3.16)
 
 project(opentensor CXX C)
 
-if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-  message(FATAL_ERROR "Do not support non-Linux now!")
-endif()
+# if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+#   message(FATAL_ERROR "Do not support non-Linux now!")
+# endif()
 
 # TODO: remove it in the future
 set(CMAKE_BUILD_TYPE Debug CACHE STRING "Set build type to DEBUG" FORCE)
 message(AUTHOR_WARNING "Overwrite build type to DEBUG for development")
 
-find_package(LLVM REQUIRED CONFIG)
-find_package(Clang REQUIRED CONFIG)
+if(USE_CXX_FRONTEND)
+  find_package(LLVM REQUIRED CONFIG)
+  find_package(Clang REQUIRED CONFIG)
+endif()
 
 option(ENABLE_TEST "Enable test" OFF)
-option(ENABLE_SANITIZE "Enable sanitize" ON)
+option(ENABLE_SANITIZE "Enable sanitize" OFF)
 
 # set_property(TARGET opentensor PROPERTY CXX_STANDARD 17)
 # set_property(TARGET opentensor PROPERTY CXX_STANDARD_REQUIRED ON)
@@ -31,30 +33,31 @@ add_compile_options(
   #-fno-rtti # We cannot open it because dynamic_cast needs it
   -fno-omit-frame-pointer -fstack-protector-all
   -rdynamic
-  -g
+  -std=c++17
+  -stdlib=libc++
 )
 
-if (ENABLE_SANITIZE) 
-  add_compile_options(
-    $<$<CONFIG:DEBUG>:-fsanitize=address -g>
-  )
-endif()
+# if (ENABLE_SANITIZE) 
+#   add_compile_options(
+#     $<$<CONFIG:DEBUG>:-fsanitize=address -g>
+#   )
+# endif()
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/third_party/dbg)
 
-if (!$ENV{POWFU_DIR})
-  message(FATAL_ERROR "not defined environment variable:POWFU_DIR")
-endif()
-include_directories(${POWFU_DIR}/include)
-link_directories(${POWFU_DIR}/lib)
-add_compile_options(-lstdc++fs -std=c++17)
+# if (!$ENV{POWFU_DIR})
+#   message(FATAL_ERROR "not defined environment variable:POWFU_DIR")
+# endif()
+# include_directories(${POWFU_DIR}/include)
+# link_directories(${POWFU_DIR}/lib)
+# add_compile_options(-lstdc++fs -std=c++17)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/pybind11)
 
 add_subdirectory(lib)
-add_subdirectory(bin)
+# add_subdirectory(bin)
 
 if (ENABLE_TEST)
   # List what we want to test
