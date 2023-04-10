@@ -86,7 +86,8 @@ public:
   ASTConverter(int argc, const char **argv) {
 
     // build Graph
-    _manager = std::make_shared<memb::Manager>();
+    // _manager = std::make_shared<memb::Manager>();
+    _manager = memb::Manager::build(memb::CUDA);
 
 
     auto ExpectedParser =
