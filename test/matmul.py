@@ -1,13 +1,7 @@
 import opentensor as ot
-A = ot.rand(3, 4) 
-B = ot.rand(4, 5)
-C = ot.zeros(3, 5)
 
-# i, j, k = ot.dim()
-# @einsum
-# def mm(A, B, C):
-'''einsum'''
-C[i, j] = (A[i, k] * B[k, j]).sum(k)
+A = ot.tensor({3, 4})
+B = ot.tensor({3, 4})
 
-# mm(A, B, C)
-print(C)
+C = ot.add(A, B)
+# C = ot.add(A[1:-1], B)

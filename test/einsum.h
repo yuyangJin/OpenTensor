@@ -1,6 +1,7 @@
 #ifndef EINSUM_H_
 #define EINSUM_H_
 
+#include <string>
 // class Dim {};
 
 class Tensor {
@@ -19,6 +20,12 @@ public:
   // Tensor &einsum(Tensor &);
   template <typename T, typename... Ts>
   Tensor &einsum(char *, T &arg1, Ts &...args);
+  Tensor &operator[](std::string);
+  Tensor &operator+(Tensor&);
+  Tensor &operator-(Tensor&);
+  Tensor &operator*(Tensor&);
+  Tensor &operator/(Tensor&);
+  
 };
 
 #endif // EINSUM_H_

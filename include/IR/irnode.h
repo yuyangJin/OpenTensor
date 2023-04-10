@@ -9,9 +9,11 @@ using irnode_id_t = size_t;
 
 static int global_node_id = 0;
 
-struct DataShape {
+class DataShape {
   std::vector<int64_t> _shape;
-
+public:
+  void addDim(int64_t d) {_shape.emplace_back(d);}
+  // void addDims(int64_t d) {_shape.emplace_back(d);}
   size_t getNumDims() { return _shape.size(); }
   int64_t getDim(size_t i) { return _shape[i]; }
 };
@@ -25,9 +27,9 @@ struct ParaShape {
   int64_t getDimLen(size_t i) { return _shape[i]; }
 };
 
-struct ArgList {
+class ArgList {
   std::vector<std::string> _args;
-
+public:
   void addArg(std::string arg) { _args.push_back(arg); }
   size_t getNumArgs() { return _args.size(); }
   std::string &getArg(size_t i) { return _args[i]; }
@@ -41,8 +43,10 @@ enum reduction_type_t {
   NONE,
 };
 
-enum irnode_type_t {
+enum class irnode_type_t : int{
   IRNode_Data,
+  IRNode_BinOp,
+  IRNode_SliceOp,
   // IRNode_DataDecl,
   // IRNode_DataRef,
   IRNode_Call,
@@ -116,13 +120,38 @@ class DataIRNode : public IRNode {
 
 public:
   DataIRNode(std::string &name, DataShape shape)
-      : IRNode(IRNode_Data), _name(std::string(name)),
+      : IRNode(irnode_type_t::IRNode_Data), _name(std::string(name)),
         _shape(std::move(shape)) {}
 
   std::string &getName() { return _name; }
   // ExprAST *getInitVal() { return initVal.get(); }
   DataShape &getShape() { return _shape; }
 };
+
+class BinIRNode : public IRNode {
+  // private:
+  std::string _op;
+
+public:
+  BinIRNode(std::string &op)
+      : IRNode(irnode_type_t::IRNode_BinOp), _op(std::string(op)) {}
+
+  std::string &getOp() { return _op; }
+  // ExprAST *getInitVal() { return initVal.get(); }
+  // DataShape &getShape() { return _shape; }
+};
+
+class SliceIRNode : public IRNode {
+private:
+  std::vector<std::tuple<int, int, int>> _range;
+
+public:
+  SliceIRNode()
+      : IRNode(irnode_type_t::IRNode_SliceOp) {}
+
+  void setSliceRange(int start, int end, int step) {_range.emplace_back(std::make_tuple(start, end, step));}
+};
+
 
 // class DataRefIRNode : public IRNode {
 // private:
@@ -139,7 +168,7 @@ class CallIRNode : public IRNode {
 
 public:
   CallIRNode(std::string &obj_name, std::string &func_name, ArgList args)
-      : IRNode(IRNode_Call), _obj_name(obj_name),
+      : IRNode(irnode_type_t::IRNode_Call), _obj_name(obj_name),
         _callee_func_name(std::string(func_name)), _args(std::move(args)) {}
 
   std::string &getCalleeFuncName() { return _callee_func_name; }
@@ -150,7 +179,7 @@ public:
 class MemIRNode : public IRNode {
 public:
   MemIRNode(std::string &obj, mem_access_mode_t mode, mem_access_type_t type)
-      : IRNode(IRNode_Mem), _obj(std::string(obj)), _mode(mode), _type(type) {
+      : IRNode(irnode_type_t::IRNode_Mem), _obj(std::string(obj)), _mode(mode), _type(type) {
     if (_mode == READ) {
       _mode_str = std::string("read");
     } else if (_mode == WRITE) {
@@ -174,14 +203,14 @@ private:
 
 class TaskIRNode : public IRNode {
 
-  TaskIRNode() : IRNode(IRNode_Task) {}
+  TaskIRNode() : IRNode(irnode_type_t::IRNode_Task) {}
 };
 
 class EinsumTaskIRNode : public IRNode {
 public:
   EinsumTaskIRNode(std::string &lhs, std::string &rhs,
                    ReductionMode reduction_mode)
-      : IRNode(IRNode_EinsumTask), _lhs(std::string(lhs)),
+      : IRNode(irnode_type_t::IRNode_EinsumTask), _lhs(std::string(lhs)),
         _rhs(std::string(rhs)), _reduction_mode(std::move(reduction_mode)) {}
 
   std::string &getLHS() { return _lhs; }
@@ -215,10 +244,10 @@ class ParaIRNode : public RegionIRNode {
 
 public:
   ParaIRNode(std::unique_ptr<IRNodeList> body, ParaShape para_shape)
-      : RegionIRNode(IRNode_Parallel, std::move(body)),
+      : RegionIRNode(irnode_type_t::IRNode_Parallel, std::move(body)),
         _para_shape(std::move(para_shape)) {}
   ParaIRNode(ParaShape para_shape)
-      : RegionIRNode(IRNode_Parallel), _para_shape(std::move(para_shape)) {}
+      : RegionIRNode(irnode_type_t::IRNode_Parallel), _para_shape(std::move(para_shape)) {}
 
   ParaShape &getParaShape() { return _para_shape; }
 };

@@ -4,7 +4,7 @@ IRGraphDumper::IRGraphDumper() { _fs.open("graph.dot", std::ios::out); }
 
 IRGraphDumper::~IRGraphDumper() { _fs.close(); }
 
-void IRGraphDumper::dump(IRGraph *graph) {
+void IRGraphDumper::dumpGraph(IRGraph *graph) {
   _fs << "digraph G {" << std::endl;
 
   auto &nodes = graph->getNodes();
@@ -69,47 +69,52 @@ void IRGraphDumper::dump(IRNode *n) {
   // dbg(n);
   // dbg(node_type);
   switch (node_type) {
-  case IRNode_Data: {
+  case irnode_type_t::IRNode_Data: {
     auto *dn = dynamic_cast<DataIRNode *>(n);
     dump(dn);
     break;
   }
-  case IRNode_Call: {
+  case irnode_type_t::IRNode_BinOp: {
+    auto *bn = dynamic_cast<BinIRNode *>(n);
+    dump(bn);
+    break;
+  }
+  case irnode_type_t::IRNode_Call: {
     auto *cn = dynamic_cast<CallIRNode *>(n);
     dump(cn);
     break;
   }
-  case IRNode_Mem: {
+  case irnode_type_t::IRNode_Mem: {
     auto *mn = dynamic_cast<MemIRNode *>(n);
     dump(mn);
     break;
   }
-  case IRNode_Task: {
+  case irnode_type_t::IRNode_Task: {
     auto *tn = dynamic_cast<TaskIRNode *>(n);
     dump(tn);
     break;
   }
-  case IRNode_EinsumTask: {
+  case irnode_type_t::IRNode_EinsumTask: {
     auto *etn = dynamic_cast<EinsumTaskIRNode *>(n);
     dump(etn);
     break;
   }
-  case IRNode_Comm: {
+  case irnode_type_t::IRNode_Comm: {
     auto *cn = dynamic_cast<CommIRNode *>(n);
     dump(cn);
     break;
   }
-  case IRNode_Parallel: {
+  case irnode_type_t::IRNode_Parallel: {
     auto *pn = dynamic_cast<ParaIRNode *>(n);
     dump(pn);
     break;
   }
-  case IRNode_For: {
+  case irnode_type_t::IRNode_For: {
     auto *fn = dynamic_cast<ForIRNode *>(n);
     dump(fn);
     break;
   }
-  case IRNode_Branch: {
+  case irnode_type_t::IRNode_Branch: {
     auto *bn = dynamic_cast<BranchIRNode *>(n);
     dump(bn);
     break;
@@ -136,6 +141,22 @@ void IRGraphDumper::dump(DataIRNode *dn) {
 
   dumpNode(dn->getId(), label, shape, 9);
 }
+
+void IRGraphDumper::dump(BinIRNode *dn) {
+  std::string shape = std::string("box");
+  std::string label = dn->getOp();
+
+  dumpNode(dn->getId(), label, shape, 9);
+}
+
+// void IRGraphDumper::dump(SliceIRNode *sn) {
+//   std::string shape = std::string("box");
+//   std::string label = sn->getSliceRange();
+  
+//   dumpNode(sn->getId(), label, shape, 9);
+// }
+
+
 void IRGraphDumper::dump(CallIRNode *cn) {
   std::string shape = std::string("box");
   std::string label = cn->getCalleeFuncName();

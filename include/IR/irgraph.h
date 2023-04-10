@@ -24,7 +24,10 @@ private:
 
 public:
   IRGraph() {}
+  virtual ~IRGraph() = default;
   irnode_id_t addNode(std::shared_ptr<IRNode> node);
+  irnode_id_t addDataNode(DataIRNode* node);
+  irnode_id_t addBinNode(BinIRNode* node);
   void addEdge(irnode_id_t src, irnode_id_t dest);
   IRNode *getNode(irnode_id_t id);
 
@@ -45,12 +48,13 @@ class IRGraphDumper {
 public:
   IRGraphDumper();
   ~IRGraphDumper();
-  void dump(IRGraph *graph);
+  void dumpGraph(IRGraph *graph);
 
 private:
   std::ofstream _fs;
   void dump(IRNode *n);
   void dump(DataIRNode *dn);
+  void dump(BinIRNode *bn);
   void dump(CallIRNode *cn);
   void dump(MemIRNode *mn);
   void dump(TaskIRNode *tn);

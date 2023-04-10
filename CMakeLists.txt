@@ -31,6 +31,7 @@ add_compile_options(
   #-fno-rtti # We cannot open it because dynamic_cast needs it
   -fno-omit-frame-pointer -fstack-protector-all
   -rdynamic
+  -g
 )
 
 if (ENABLE_SANITIZE) 
@@ -50,6 +51,7 @@ include_directories(${POWFU_DIR}/include)
 link_directories(${POWFU_DIR}/lib)
 add_compile_options(-lstdc++fs -std=c++17)
 
+add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/pybind11)
 
 add_subdirectory(lib)
 add_subdirectory(bin)

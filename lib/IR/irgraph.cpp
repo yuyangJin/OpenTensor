@@ -10,6 +10,30 @@ irnode_id_t IRGraph::addNode(std::shared_ptr<IRNode> node) {
   return node_id;
 }
 
+irnode_id_t IRGraph::addDataNode(DataIRNode* dnode) {
+  // irnode_id_t IRGraph::addNode(std::unique_ptr<IRNode> node) {
+  _irnode_id_to_idx_map[dnode->getId()] = _nodes.size();
+  auto node_id = dnode->getId();
+  // auto node = dynamic_cast<std::unique_ptr<IRNode>>(dnode);
+  dbg(dnode);
+  std::shared_ptr<IRNode> new_node(dnode);
+  dbg(new_node);
+  _nodes.emplace_back(new_node);
+  return node_id;
+}
+
+irnode_id_t IRGraph::addBinNode(BinIRNode* dnode) {
+  // irnode_id_t IRGraph::addNode(std::unique_ptr<IRNode> node) {
+  _irnode_id_to_idx_map[dnode->getId()] = _nodes.size();
+  auto node_id = dnode->getId();
+  // auto node = dynamic_cast<std::unique_ptr<IRNode>>(dnode);
+  dbg(dnode);
+  std::shared_ptr<IRNode> new_node(dnode);
+  dbg(new_node);
+  _nodes.emplace_back(new_node);
+  return node_id;
+}
+
 void IRGraph::addEdge(irnode_id_t src, irnode_id_t dest) {
   _edges.emplace(std::make_pair(src, dest));
   _reverse_edges.emplace(std::make_pair(dest, src));
