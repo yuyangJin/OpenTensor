@@ -28,6 +28,7 @@ public:
   irnode_id_t addNode(std::shared_ptr<IRNode> node);
   irnode_id_t addDataNode(DataIRNode* node);
   irnode_id_t addBinNode(BinIRNode* node);
+  irnode_id_t addSliceNode(SliceIRNode* node);
   void addEdge(irnode_id_t src, irnode_id_t dest);
   IRNode *getNode(irnode_id_t id);
 

@@ -18,17 +18,29 @@ irnode_id_t IRGraph::addDataNode(DataIRNode* dnode) {
   dbg(dnode);
   std::shared_ptr<IRNode> new_node(dnode);
   dbg(new_node);
+  _nodes.push_back(new_node);
+  return node_id;
+}
+
+irnode_id_t IRGraph::addBinNode(BinIRNode* bnode) {
+  // irnode_id_t IRGraph::addNode(std::unique_ptr<IRNode> node) {
+  _irnode_id_to_idx_map[bnode->getId()] = _nodes.size();
+  auto node_id = bnode->getId();
+  // auto node = dynamic_cast<std::unique_ptr<IRNode>>(dnode);
+  dbg(bnode);
+  std::shared_ptr<IRNode> new_node(bnode);
+  dbg(new_node);
   _nodes.emplace_back(new_node);
   return node_id;
 }
 
-irnode_id_t IRGraph::addBinNode(BinIRNode* dnode) {
+irnode_id_t IRGraph::addSliceNode(SliceIRNode* snode) {
   // irnode_id_t IRGraph::addNode(std::unique_ptr<IRNode> node) {
-  _irnode_id_to_idx_map[dnode->getId()] = _nodes.size();
-  auto node_id = dnode->getId();
+  _irnode_id_to_idx_map[snode->getId()] = _nodes.size();
+  auto node_id = snode->getId();
   // auto node = dynamic_cast<std::unique_ptr<IRNode>>(dnode);
-  dbg(dnode);
-  std::shared_ptr<IRNode> new_node(dnode);
+  dbg(snode);
+  std::shared_ptr<IRNode> new_node(snode);
   dbg(new_node);
   _nodes.emplace_back(new_node);
   return node_id;

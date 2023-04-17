@@ -29,6 +29,10 @@ PYBIND11_MODULE(TensorIR, m) {
 
     pybind11::class_<BinIRNode, IRNode> (m, "BinIRNode")
         .def(pybind11::init<std::string &>());
+
+    pybind11::class_<SliceIRNode, IRNode> (m, "SliceIRNode")
+        .def(pybind11::init<>())
+        .def("set_slice", &SliceIRNode::setSliceRange);
     
     pybind11::class_<ArgList> (m, "ArgList")
         .def(pybind11::init<>())
@@ -42,6 +46,7 @@ PYBIND11_MODULE(TensorIR, m) {
         .def("add_node", &IRGraph::addNode)
         .def("add_datanode", &IRGraph::addDataNode)
         .def("add_binnode", &IRGraph::addBinNode)
+        .def("add_slicenode", &IRGraph::addSliceNode)
         .def("add_edge", &IRGraph::addEdge);
 
 
