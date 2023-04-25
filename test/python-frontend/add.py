@@ -1,8 +1,6 @@
 import opentensor as ot
 
-A = ot.tensor({3, 4})
-B = ot.tensor({3, 4})
+A = ot.tensor({10})
+B = ot.tensor({10})
 
 C = ot.add(A, B)
-
-C = A + B

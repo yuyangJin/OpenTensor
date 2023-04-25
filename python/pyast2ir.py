@@ -8,7 +8,7 @@ import irgraph as tir
 from irgraph import *
 from irnode import *
 from traverse import *
-from opt.shape_inference import *
+from passes.shape_inference import *
 
 
 
@@ -39,18 +39,16 @@ class ASTTraversal(object) :
                     arg_list.append(arg.id)
                 elif isinstance(arg, Constant):
                     arg_list.append(arg.value)
-            print(node.func.attr)
-            print(arg_list)
             ''' define a tensor '''
             if node.func.attr == 'tensor':
-                dnode = tir.data_irnode('?', [3, 4])
+                dnode = tir.data_irnode('?', arg_list[0])
                 dnode_id = self._irgraph.add_node(dnode)
-                print(dnode, sys.getrefcount(dnode))
+                # print(dnode, sys.getrefcount(dnode))
                 return dnode, arg_list
             elif node.func.attr == 'add':
-                bnode = tir.bin_irnode('+')
+                bnode = tir.binop_irnode('+')
                 bnode_id = self._irgraph.add_node(bnode)
-                print(bnode, sys.getrefcount(bnode))
+                # print(bnode, sys.getrefcount(bnode))
                 return bnode, arg_list
             
         return None, arg_list
@@ -66,7 +64,6 @@ class ASTTraversal(object) :
         lhs_name = None
         for target in node.targets:
             lhs_name = target.id
-        print(node)
         if isinstance(node.value, Call):
             rhs_node, input_tensors = self.traverse_Call(node.value)
             if rhs_node != None:
@@ -129,12 +126,12 @@ _ast = ast.parse(data)
 visitor = ASTTraversal(_ast)
 irg = visitor.traverse()
 
-print(irg.get_nodes())
-print(irg.get_edges())
+# print(irg.get_nodes())
+# print(irg.get_edges())
 
 
 
-gt = Traverse(irg, shape_inference)
+gt = Traversal(irg, shape_inference)
 
 
 # dumper = tir.IRGraphDumper()

@@ -2,7 +2,7 @@ from irgraph import *
 from irnode import *
 
 
-class Traverse(object) :
+class Traversal(object) :
     def __init__(self, irgraph, func):
         self._graph = irgraph
         self._inference_nodelist = list()
@@ -33,8 +33,10 @@ class Traverse(object) :
             node_id = self._inference_nodelist[0]
             self._inference_nodelist.remove(node_id)
             node = self._graph.get_node(node_id)
-            func(node)
-            # print(node_id)
+
+            ''' Execute the input function for each node '''
+            func(self._graph, node)
+            
             dest_nodes = self._graph.get_dest_node_ids(node_id)
             for dest_node_id in dest_nodes:
                 if dest_node_id in self._accessed_nodelist:

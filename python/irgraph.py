@@ -86,13 +86,13 @@ class irgraph_dumper():
 
         self.dump_node(dn.get_id(), label, 'ellipse', 9)
 
-    def dump_binnode(self, bn: bin_irnode):
+    def dump_binnode(self, bn: binop_irnode):
         self.dump_node(bn.get_id(), bn.get_op(), 'box', 9)
 
     def dump(self, node: irnode):
         if isinstance(node, data_irnode):
             self.dump_datanode(node)
-        elif isinstance(node, bin_irnode):
+        elif isinstance(node, binop_irnode):
             self.dump_binnode(node)
 
     def dump_graph(self, irgraph: irgraph):

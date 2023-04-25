@@ -65,14 +65,42 @@ class data_irnode(irnode):
         return self._shape
 
 class op_irnode(irnode):
-    def __init__(self):
-        super(bin_irnode, self).__init__(irnode_type.IRNode_Op)
+    def __init__(self, type):
+        super(op_irnode, self).__init__(type)
+        self._num_inputs = 0
+        self._num_outputs = 0
+        self._input_shapes = []
+        self._output_shapes = []
 
+    def set_num_inputs(self, n):
+        self._num_inputs = n
 
-class bin_irnode(op_irnode):
+    def set_num_outputs(self, n):
+        self._num_outputs = n
 
+    def set_input_shapes(self, s):
+        self._input_shapes = s
+
+    def set_output_shapes(self, s):
+        self._output_shapes = s
+
+    def get_input_shapes(self):
+        return self._input_shapes
+
+    def get_output_shapes(self):
+        return self._output_shapes
+
+    def add_input(self, n):
+        if isinstance(n, data_irnode):
+            self._num_inputs += 1
+            self._input_shapes.append(n.get_shape())
+
+    
+
+class binop_irnode(op_irnode):
     def __init__(self, op):
-        super(bin_irnode, self).__init__(irnode_type.IRNode_BinOp)
+        # super(binop_irnode, self).__init__(irnode_type.IRNode_BinOp)
+        op_irnode.__init__(self, irnode_type.IRNode_BinOp)
         self._op = op
     
     def get_op(self):
