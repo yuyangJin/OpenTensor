@@ -5,6 +5,7 @@ global_node_id = 0
 
 class irnode_type(Enum) :
     IRNode_Data = 0
+    IRNode_Op = 100
     IRNode_BinOp = 1
     IRNode_SliceOp = 2
     IRNode_Call = 3
@@ -63,9 +64,12 @@ class data_irnode(irnode):
     def get_shape(self):
         return self._shape
 
+class op_irnode(irnode):
+    def __init__(self):
+        super(bin_irnode, self).__init__(irnode_type.IRNode_Op)
 
-class bin_irnode(irnode):
-    _op = ''
+
+class bin_irnode(op_irnode):
 
     def __init__(self, op):
         super(bin_irnode, self).__init__(irnode_type.IRNode_BinOp)

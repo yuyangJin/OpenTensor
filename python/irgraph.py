@@ -29,6 +29,33 @@ class irgraph():
 
     def get_edges(self):
         return self._edges
+    
+    def get_node_ids_without_in_edges(self):
+        node_id_list = []
+        for node_id, idx in self._irnode_id_to_idx_map.items():
+            if node_id not in self._reverse_edges.keys():
+                node_id_list.append(node_id)
+        return node_id_list
+
+    def get_src_node_ids(self, node_id):
+        node_id_list = []
+        if node_id in self._reverse_edges.keys():
+            ret = self._reverse_edges[node_id]
+            if isinstance(ret, int):
+                node_id_list.append(ret)
+            elif isinstance(ret, list):
+                node_id_list += ret
+        return node_id_list
+    
+    def get_dest_node_ids(self, node_id):
+        node_id_list = []
+        if node_id in self._edges.keys():
+            ret = self._edges[node_id]
+            if isinstance(ret, int):
+                node_id_list.append(ret)
+            elif isinstance(ret, list):
+                node_id_list += ret
+        return node_id_list
 
 class irgraph_dumper():
     def __init__(self):
@@ -75,7 +102,6 @@ class irgraph_dumper():
         self._f.write('digraph G {\n')
 
         nodes = irgraph.get_nodes()
-        print(len(nodes))
         for node in nodes:
             print(node)
             self.dump(node)

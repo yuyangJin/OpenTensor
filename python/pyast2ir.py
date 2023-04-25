@@ -7,6 +7,8 @@ import sys
 import irgraph as tir
 from irgraph import *
 from irnode import *
+from traverse import *
+from opt.shape_inference import *
 
 
 
@@ -127,70 +129,13 @@ _ast = ast.parse(data)
 visitor = ASTTraversal(_ast)
 irg = visitor.traverse()
 
+print(irg.get_nodes())
+print(irg.get_edges())
 
 
-# traverse_AST(_ast)
 
-# visitor.visit(_ast)
+gt = Traverse(irg, shape_inference)
 
-# irgraph = visitor.get_irgraph()
-
-# irgraph1 = tir.IRGraph()
-
-# ds = tir.DataShape()
-# # ds.add_dim(3)
-# # ds.add_dim(4)
-# dn = tir.DataIRNode('A', ds)
-# print(dn)
-# dn_id = irgraph1.add_datanode(dn)
-# dn = tir.DataIRNode('B', ds)
-# print(dn)
-# dn_id = irgraph1.add_datanode(dn)
-# dn1 = tir.DataIRNode('C', ds)
-# print(dn1)
-# dn_id = irgraph1.add_datanode(dn1)
-
-# birnode1 = tir.BinIRNode('3,4')
-# # birnode.set_op('3,4')
-# birnode1_id = irgraph1.add_binnode(birnode1)
-
-# birnode1 = tir.BinIRNode('3,4')
-# # birnode.set_op('3,4')
-# birnode1_id = irgraph1.add_binnode(birnode1)
-
-# birnode2 = tir.BinIRNode('+')
-# # birnode.set_op('3,4')
-# birnode2_id = irgraph1.add_binnode(birnode2)
-
-# # birnode = tir.BinIRNode('3,4')
-# # # birnode.set_op('3,4')
-# # birnode_id = irgraph1.add_binnode(birnode)
-
-# # irgraph1.add_edge(birnode_id, dn_id)
-
-# # ds1 = tir.DataShape()
-# # ds1.add_dim(3)
-# # ds1.add_dim(4)
-# # dn2 = tir.DataIRNode('B', ds1)
-# # dn2_id = irgraph1.add_datanode(dn2)
-
-# # birnode1 = tir.BinIRNode('3,4')
-# # # birnode.set_op('3,4')
-# # birnode1_id = irgraph1.add_binnode(birnode1)
-
-# # irgraph1.add_edge(birnode1_id, dn2_id)
-
-# # ds3 = tir.DataShape()
-# # ds3.add_dim(3)
-# # ds3.add_dim(4)
-# # dn3 = tir.DataIRNode('A', ds3)
-# # dn3_id = irgraph1.add_datanode(dn3)
-
-# # birnode3 = tir.BinIRNode('+')
-# # # birnode.set_op('+')
-# # birnode3_id = irgraph1.add_binnode(birnode3)
-
-# # irgraph1.add_edge(birnode3_id, dn3_id)
 
 # dumper = tir.IRGraphDumper()
 dumper = tir.irgraph_dumper()
