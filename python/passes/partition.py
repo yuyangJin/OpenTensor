@@ -65,29 +65,45 @@ class Partition(object):
         print(self._node.partition_idxs())
 
     def visualize_inputs(self):
+        print(self._node)
         if isinstance(self._node, op_irnode):
+
             nodes = self._node.get_input_nodes()
             print(len(nodes))
             figs, axs = plt.subplots(len(nodes), figsize=(2, len(nodes) * 2))
             print(axs)
+
+            print(nodes)
             for i in range(len(nodes)):
                 node = nodes[i]
 
                 shape = node.shape()
                 p_idxs = node.partition_idxs() # [[(0, 5), (0, 19)], [(5, 10), (0, 19)]]
+                n_idx = node.idx()
 
                 data = np.zeros(tuple(node.shape()))
 
-                print('data:', data.shape)
-                
+                print('p_idxs', p_idxs)
+
+                print('n_idx', n_idx)
+
+                # print('data:', data.shape)
+                starts = [d_idx[0] for d_idx in n_idx]
+                print('starts',starts)
                 for j in range(len(p_idxs)):
                     pi = p_idxs[j]
                     slice_idxs = list()
-                    for idx in pi:
-                        slice_idxs.append(slice(*idx))
+                    for d in range(len(pi)):
+                        idx = pi[d]
+                        start = starts[d]
+                        idx_tmp = (idx[0] - start, idx[1] - start)
+                        print(idx_tmp)
+                        slice_idxs.append(slice(*idx_tmp))
+                    # print((slice_idxs))
                     data[tuple(slice_idxs)] = j
-                    print(data)
+                    # print(data)
                 
+
                 print(data)
 
                 cdict = {
@@ -98,8 +114,10 @@ class Partition(object):
 
                 cmap = colors.LinearSegmentedColormap('my_colormap', cdict, 1024)
 
-
-                axs[i].pcolormesh(data, cmap=cmap, vmin=0, vmax=len(p_idxs), edgecolor='k')
+                if len(data.shape) == 1:
+                    axs[i].pcolormesh([data], cmap=cmap, vmin=0, vmax=len(p_idxs), edgecolor='k')
+                elif len(data.shape) == 2:
+                    axs[i].pcolormesh(data, cmap=cmap, vmin=0, vmax=len(p_idxs), edgecolor='k')
                 # for x in range(shape[0] + 1):
                 # # axs[i].grid()
                 #     axs[i].axhline(x, lw=2, color='k', zorder=5)

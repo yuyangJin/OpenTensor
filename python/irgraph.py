@@ -46,7 +46,6 @@ class irgraph():
         node_id_list = []
         if node_id in self._reverse_edges.keys():
             ret = self._reverse_edges[node_id]
-            print(ret)
             if isinstance(ret, int):
                 node_id_list.append(ret)
             elif isinstance(ret, list):
@@ -93,14 +92,19 @@ class irgraph_dumper():
 
         self.dump_node(dn.get_id(), label, 'ellipse', 9)
 
-    def dump_binnode(self, bn: binop_irnode):
+    def dump_binopnode(self, bn: binop_irnode):
         self.dump_node(bn.get_id(), bn.get_op(), 'box', 9)
+
+    def dump_sliceopnode(self, sn: sliceop_irnode):
+        self.dump_node(sn.get_id(), str(sn.get_slice()), 'box', 9)
 
     def dump(self, node: irnode):
         if isinstance(node, data_irnode):
             self.dump_datanode(node)
         elif isinstance(node, binop_irnode):
-            self.dump_binnode(node)
+            self.dump_binopnode(node)
+        elif isinstance(node, sliceop_irnode):
+            self.dump_sliceopnode(node)
 
     def dump_graph(self, irgraph: irgraph):
         self._f = open('graph.dot', 'w')
@@ -114,8 +118,9 @@ class irgraph_dumper():
             self.dump(node)
         
         edges = irgraph.get_edges()
-        for s, d in edges.items():
-            self.dump_edge(s, d)
+        for s, ds in edges.items():
+            for d in ds:
+                self.dump_edge(s, d)
 
         self._f.write('}\n')
 

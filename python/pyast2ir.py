@@ -134,8 +134,8 @@ print(irg.get_reverse_edges())
 
 gt = Traversal(irg, shape_inference)
 
-Partition(irg.get_node(1)).cart(2, 2)
-Partition(irg.get_node(2)).cart(2, 2)
+Partition(irg.get_node(1)).cart(1, 2)
+Partition(irg.get_node(2)).cart(1, 2)
 
 Partition(irg.get_node(3)).visualize_inputs()
 

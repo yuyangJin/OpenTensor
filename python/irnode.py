@@ -40,6 +40,10 @@ class irnode(object) :
     def add_partition_idx(self, p):
         self._partition_idxs.append(p)
 
+    def set_partition_idxs(self, ps):
+        self._partition_idxs = ps
+
+
     def partition_idxs(self):
         return self._partition_idxs
 
@@ -52,7 +56,7 @@ class data_irnode(irnode):
         if shape != []:
             self._idx = []
             for i in range(len(shape)):
-                self._idx.append((0, shape[i]-1))
+                self._idx.append((0, shape[i]))
             print(self._idx)
             
         
@@ -75,6 +79,9 @@ class data_irnode(irnode):
     def shape(self):
         return self._shape
     
+    def set_idx(self, idx):
+        self._idx = idx
+
     def idx(self):
         return self._idx
 
@@ -122,7 +129,7 @@ class op_irnode(irnode):
             self._num_inputs += 1
             self._input_shapes.append(n.get_shape())
 
-    
+
 
 class binop_irnode(op_irnode):
     def __init__(self, op):
@@ -134,3 +141,13 @@ class binop_irnode(op_irnode):
         return self._op
 
         
+class sliceop_irnode(op_irnode):
+    def __init__(self, slice = ()):
+        op_irnode.__init__(self, irnode_type.IRNode_SliceOp)
+        self._slice = slice
+
+    def set_slice(self):
+        return self._slice
+
+    def get_slice(self):
+        return self._slice
