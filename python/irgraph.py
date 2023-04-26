@@ -8,8 +8,8 @@ class irgraph():
     _nodes = list()
     _irnode_id_to_idx_map = dict()
 
-    _edges = defaultdict()
-    _reverse_edges = defaultdict()
+    _edges = defaultdict(list)
+    _reverse_edges = defaultdict(list)
 
     def add_node(self, node):
         node_id = node.get_id()
@@ -18,8 +18,10 @@ class irgraph():
         return node_id
     
     def add_edge(self, src, dest):
-        self._edges[src] = dest
-        self._reverse_edges[dest] = src
+        self._edges[src].append(dest)
+        self._reverse_edges[dest].append(src)
+
+        print(self._reverse_edges)
 
     def get_node(self, node_id):
         return self._nodes[self._irnode_id_to_idx_map[node_id]]
@@ -29,6 +31,9 @@ class irgraph():
 
     def get_edges(self):
         return self._edges
+    
+    def get_reverse_edges(self):
+        return self._reverse_edges
     
     def get_node_ids_without_in_edges(self):
         node_id_list = []
@@ -41,6 +46,7 @@ class irgraph():
         node_id_list = []
         if node_id in self._reverse_edges.keys():
             ret = self._reverse_edges[node_id]
+            print(ret)
             if isinstance(ret, int):
                 node_id_list.append(ret)
             elif isinstance(ret, list):
@@ -56,6 +62,7 @@ class irgraph():
             elif isinstance(ret, list):
                 node_id_list += ret
         return node_id_list
+    
 
 class irgraph_dumper():
     def __init__(self):

@@ -9,7 +9,7 @@ from irgraph import *
 from irnode import *
 from traverse import *
 from passes.shape_inference import *
-
+from passes.partition import *
 
 
 class ASTTraversal(object) :
@@ -127,12 +127,17 @@ visitor = ASTTraversal(_ast)
 irg = visitor.traverse()
 
 # print(irg.get_nodes())
-# print(irg.get_edges())
+print(irg.get_edges())
+print(irg.get_reverse_edges())
 
 
 
 gt = Traversal(irg, shape_inference)
 
+Partition(irg.get_node(1)).cart(2, 2)
+Partition(irg.get_node(2)).cart(2, 2)
+
+Partition(irg.get_node(3)).visualize_inputs()
 
 # dumper = tir.IRGraphDumper()
 dumper = tir.irgraph_dumper()

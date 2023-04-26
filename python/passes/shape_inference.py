@@ -4,6 +4,7 @@ from irnode import *
 
 def bin_irnode_shape_inference(g, node):
     src_node_ids = g.get_src_node_ids(node.get_id())
+    print(src_node_ids)
     for src_node_id in src_node_ids:
         node.add_input(g.get_node(src_node_id))
     # TODO: check inputs with same shape?
@@ -25,7 +26,6 @@ def data_irnode_shape_inference(g, node):
             node.set_shape(shape[0])
             print(node.get_name(), shape[0])
             return 
-
 
 
 def shape_inference(graph, node):
